@@ -66,18 +66,22 @@ typedef struct cr_channel_struct    cr_channel_t;
 typedef struct cr_pool_struct   cr_pool_t;
 struct cr_pool_node_struct {
     struct list_head    list_head[1];
+    struct list_head    index_head[1];   /* 用于在释放内存池对象的时候对内存池节点进行定位 */
     cr_pool_t   *pool;
     
+    size_t  block_size;
+    size_t  node_size;
     int     block_total;
     int     block_free;
     int     block_used;
 
-    unsigned int    *first_free;
-    unsigned int    *blocks;
+    void    *first_free;
+    void    *buffer;
 };
 typedef struct cr_pool_node_struct  cr_pool_node_t;
 
 struct cr_pool_struct {
+    struct list_head    nodes[1];   /* 用于在释放内存池对象的时候对内存池节点进行定位 */
     struct list_head    full[1];
     struct list_head    partial[1];
     struct list_head    free[1];
