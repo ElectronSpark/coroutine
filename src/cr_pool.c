@@ -36,7 +36,6 @@ int cr_pool_init(cr_pool_t *pool, size_t pool_size, size_t block_size,
     return 0;
 }
 
-
 /* 利用 malloc 分配新的内存池节点 */
 static cr_pool_node_t *__node_alloc(size_t block_size, size_t buffer_size)
 {

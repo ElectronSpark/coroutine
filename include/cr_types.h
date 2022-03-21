@@ -37,6 +37,7 @@ typedef struct cr_waitable_struct   cr_waitable_t;
 /* 全局协程表 */
 struct cr_global_control_table_struct {
     cr_waitable_t       ready_queue[1];
+    int     task_count;
     struct {
         int     valid: 1;
     } flag;

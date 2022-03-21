@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "list_types.h": "c",
-        "list.h": "c"
+        "list.h": "c",
+        "coroutine.h": "c",
+        "cr_task.h": "c"
     }
 }
