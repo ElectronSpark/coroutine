@@ -349,9 +349,9 @@ void *cr_pool_block_alloc(cr_pool_t *pool)
     }
 
     if (!list_empty(pool->partial)) {
-        node = list_first_entry(pool->partial, cr_pool_node_t, list_head[1]);
+        node = list_first_entry(pool->partial, cr_pool_node_t, list_head[0]);
     } else if (!list_empty(pool->free)) {
-         node = list_first_entry(pool->free, cr_pool_node_t, list_head[1]);
+         node = list_first_entry(pool->free, cr_pool_node_t, list_head[0]);
     } else {
         node = __node_alloc(pool->block_size, pool->node_size);
         if (!node) {
