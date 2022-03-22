@@ -69,7 +69,9 @@ static void __tcb_free(cr_task_t *task)
 static void __cr_task_entry_func(void *arg, cr_function_t entry, 
                                  cr_task_t *task)
 {
-
+    cr_set_current_task(task);
+    entry(arg);
+    cr_task_exit();
 }
 
 

@@ -10,6 +10,8 @@ extern cr_gct_t cr_global_control_table;
 #define cr_global()     (&cr_global_control_table)
 #define cr_self()       (cr_global()->current_task)
 #define cr_main()       (cr_global()->main_task)
+#define cr_set_current_task(task)   \
+    do { cr_global()->current_task = task; } while (0)
 
 /* 用于判断协程框架是否处于有效状态 */
 #define cr_is_eventloop_valid() (cr_global()->flag.valid)
