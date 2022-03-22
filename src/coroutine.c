@@ -12,13 +12,15 @@ cr_gct_t cr_global_control_table;
 int cr_init(void)
 {
     cr_waitable_init(cr_global()->ready_queue);
+    cr_waitable_init(cr_global()->cancel_queue);
     cr_global()->task_count = 0;
+    cr_global()->cancel_count = 0;
 
     if (cr_init_main(cr_main()) != 0) {
         return -1;
     }
 
-    cr_global()->current_task = cr_global()->main_task;
+    cr_set_current_task(cr_main());
     cr_global()->flag.valid = 1;
 
     return 0;

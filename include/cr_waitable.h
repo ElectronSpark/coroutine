@@ -8,14 +8,18 @@
 /* 判断是否有协程在等待一个可等待实体 */
 #define cr_is_waitable_busy(wtb)  ((wtb))
 
-void cr_waitable_init(cr_waitable_t *waitable);
-void cr_waitable_push(cr_waitable_t *waitable, cr_task_t *task);
-void cr_waitable_push_tail(cr_waitable_t *waitable, cr_task_t *task);
-void cr_waitable_put_off(cr_waitable_t *waitable, cr_task_t *task);
+int cr_waitable_init(cr_waitable_t *waitable);
+int cr_waitable_push(cr_waitable_t *waitable, cr_task_t *task);
+int cr_waitable_push_tail(cr_waitable_t *waitable, cr_task_t *task);
+int cr_waitable_put_off(cr_waitable_t *waitable, cr_task_t *task);
 cr_task_t *cr_waitable_get(cr_waitable_t *waitable);
 cr_task_t *cr_waitable_get_tail(cr_waitable_t *waitable);
 cr_task_t *cr_waitable_pop(cr_waitable_t *waitable);
 cr_task_t *cr_waitable_pop_tail(cr_waitable_t *waitable);
+int cr_waitable_remove(cr_waitable_t *waitable, cr_task_t *task);
 
+int cr_waitable_notify(cr_waitable_t *waitable);
+int cr_waitable_broadcast(cr_waitable_t *waitable);
+int cr_await(cr_waitable_t *waitable);
 
 #endif /* __CR_WAITABLE_H__ */

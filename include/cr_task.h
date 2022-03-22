@@ -37,15 +37,16 @@ extern cr_gct_t cr_global_control_table;
 
 /* 协程控制块相关操作 */
 int cr_init_main(cr_task_t *task);
+int cr_task_init(cr_task_t *task, cr_function_t entry, void *arg);
 cr_task_t *cr_task_create(cr_function_t entry, void *arg);
-int cr_task_init(cr_task_t *task);
+int cr_task_destroy(cr_task_t *task);
 int cr_task_cancel(cr_task_t *task);
-int cr_task_exit(void);
+void cr_task_exit(void);
 
 int cr_resume(cr_task_t *task);
 int cr_yield(void);
 
-int cr_await(cr_waitable_t *waitable);
+int cr_suspend(cr_task_t *task);
 int cr_wakeup(cr_task_t *task);
 
 
