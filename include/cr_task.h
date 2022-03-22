@@ -33,25 +33,12 @@ extern cr_gct_t cr_global_control_table;
 #define cr_task_unset_ready(task)     __cr_task_change_flag(task, ready, 0)
 
 
-/* 协程队列操作 */
-/* 判断是否有协程在等待一个可等待实体 */
-#define cr_is_waitable_busy(wtb)  ((wtb))
-
-void cr_waitable_init(cr_waitable_t *waitable);
-void cr_waitable_push(cr_waitable_t *waitable, cr_task_t *task);
-void cr_waitable_push_tail(cr_waitable_t *waitable, cr_task_t *task);
-void cr_waitable_put_off(cr_waitable_t *waitable, cr_task_t *task);
-cr_task_t *cr_waitable_get(cr_waitable_t *waitable);
-cr_task_t *cr_waitable_get_tail(cr_waitable_t *waitable);
-cr_task_t *cr_waitable_pop(cr_waitable_t *waitable);
-cr_task_t *cr_waitable_pop_tail(cr_waitable_t *waitable);
-
-
 /* 协程控制块相关操作 */
 int cr_init_main(cr_task_t *task);
 cr_task_t *cr_task_create(cr_function_t entry, void *arg);
 int cr_task_init(cr_task_t *task);
 int cr_task_cancel(cr_task_t *task);
+int cr_task_exit(void);
 
 int cr_resume(cr_task_t *task);
 int cr_yield(void);

@@ -8,7 +8,6 @@
 
 #define CR_POOL_ALIGN_SIZE      sizeof(void*)
 #define CR_POOL_NODE_SIZE_MAX   (1UL << 20)
-#define CR_POOL_NODE_SIZE_MIN   CR_POOL_ALIGN_SIZE
 
 
 /* 静态初始化内存池 */

@@ -4,8 +4,8 @@
 
 #include <cr_types.h>
 #include <cr_task.h>
+#include <cr_waitable.h>
 #include <cr_channel.h>
-#include <cr_pool.h>
 
 
 int cr_init(void);
