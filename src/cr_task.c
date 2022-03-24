@@ -79,8 +79,8 @@ static void __cr_task_entry_func(void *arg, cr_function_t entry,
 static int __cr_task_switch_to(cr_task_t *task)
 {
     /* 在栈里保存当前协程的协程控制块，用于返回当前协程后重新设置当前协程 */
-    volatile cr_task_t *self = cr_self();
-    volatile cr_context_t *last = NULL;
+    cr_task_t *self = cr_self();
+    cr_context_t *last = NULL;
     __asm__ __volatile__("nop\n\t");    /* 防止编译器优化 */
 
     last = cr_switch_to(cr_self()->regs, task->regs);
@@ -131,7 +131,7 @@ int cr_init_main(cr_task_t *task)
         return -1;
     }
 
-    __tcb_init(task, NULL, NULL, NULL, NULL);
+    __tcb_init(task, NULL, NULL, NULL, 0);
     cr_task_set_main(task);
     cr_task_set_alive(task);
     cr_task_set_ready(task);

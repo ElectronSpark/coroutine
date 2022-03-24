@@ -311,7 +311,7 @@ static void __adjust_node_list(cr_pool_node_t *node, int origin_used)
 {
     cr_pool_t *pool = NULL;
 
-    if (!node || (pool = node->list_head) == NULL) {
+    if (!node || (pool = node->pool) == NULL) {
         return;
     }
 
