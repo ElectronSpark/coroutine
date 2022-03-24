@@ -1,5 +1,6 @@
 #include <malloc.h>
 #include <coroutine.h>
+#include <cr_pool.h>
 
 
 /* 初始化内存池 */

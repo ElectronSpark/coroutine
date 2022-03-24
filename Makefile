@@ -1,0 +1,50 @@
+CURDIR = $(shell pwd)
+ARCH := x86_64
+
+CC := gcc
+AS := as
+AR := ar
+LD := ld
+
+ARCH_DIR = $(CURDIR)/cpu/$(ARCH)
+ARCH_SRC = $(ARCH_DIR)/src
+ARCH_INC = $(ARCH_DIR)/include
+
+INC_DIR = $(CURDIR) $(CURDIR)/include $(CURDIR)/external/include $(ARCH_INC)
+SRC_DIR = $(CURDIR)/src $(CURDIR)/external/src $(ARCH_DIR)/src
+
+CFLAGS = $(foreach each,$(INC_DIR),-I$(each)) -c
+ASFLAGS = $(CFLAGS)
+
+
+C_FILES =	\
+	$(CURDIR)/src/coroutine.c	\
+	$(CURDIR)/src/cr_channel.c	\
+	$(CURDIR)/src/cr_pool.c	\
+	$(CURDIR)/src/cr_task.c	\
+	$(CURDIR)/src/cr_waitable.c	\
+	$(CURDIR)/external/src/rbtree.c
+ASM_FILES =	\
+	$(ARCH_DIR)/src/cpu.S
+
+C_OBJS = $(foreach each,$(C_FILES),$(subst .c,.o,$(each)))
+ASM_OBJS = $(foreach each,$(ASM_FILES),$(subst .S,.o,$(each)))
+OBJS = $(ASM_OBJS) $(C_OBJS)
+TARGET = libcoroutine.a
+
+all: $(TARGET)
+	@echo $(OBJS)
+
+$(TARGET): $(OBJS)
+	$(AR) cqs $@ $^
+
+$(C_OBJS):%.o:%.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(ASM_OBJS):%.o:%.S
+	$(CC) $(ASFLAGS) $< -o $@
+
+clean:
+	rm $(OBJS) $(TARGET)
+
+.PHONY = all library objs clean

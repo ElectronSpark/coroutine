@@ -4,6 +4,7 @@
         "list.h": "c",
         "coroutine.h": "c",
         "cr_task.h": "c",
-        "cpu_specific.h": "c"
+        "cpu_specific.h": "c",
+        "cr_pool.h": "c"
     }
 }

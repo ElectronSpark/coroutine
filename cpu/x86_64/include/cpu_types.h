@@ -2,19 +2,20 @@
 #ifndef __CR_CPU_TYPES__
 #define __CR_CPU_TYPES__
 
-#include <stddef.h>
-
-
 /* 通用寄存器的个数 */
 #define CR_CPU_GP_REGS          16
 
-/* 协程寄存器上下文 */
 #ifndef __ASM__
+#include <stddef.h>
+
+
+/* 协程寄存器上下文 */
 struct cr_context_struct {
     void    *gp_regs[CR_CPU_GP_REGS];
 };
 typedef struct cr_context_struct    cr_context_t;
 #endif /* __ASM__ */
+
 
 /* 所有通用寄存器在上下文中的索引 */
 #define CR_CPU_INDEX_RAX        0
