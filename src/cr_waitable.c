@@ -17,7 +17,7 @@ int cr_waitable_init(cr_waitable_t *waitable)
 /* 为协程加入等待队列做准备，准备成功返回 0，失败返回 -1 */
 static int __cr_waitable_push_prepare(cr_waitable_t *waitable, cr_task_t *task)
 {
-    if (!waitable || !task) {
+    if (!waitable || !task || task->cur_queue) {
         return -1;
     }
     if (!list_empty_careful(task->list_head)) {
@@ -33,6 +33,7 @@ int cr_waitable_push(cr_waitable_t *waitable, cr_task_t *task)
         return -1;
     }
     list_add(task->list_head, waitable->wait_queue);
+    task->cur_queue = waitable;
     return 0;
 }
 
@@ -43,6 +44,7 @@ int cr_waitable_push_tail(cr_waitable_t *waitable, cr_task_t *task)
         return -1;
     }
     list_add_tail(task->list_head, waitable->wait_queue);
+    task->cur_queue = waitable;
     return 0;
 }
 
@@ -50,7 +52,10 @@ int cr_waitable_push_tail(cr_waitable_t *waitable, cr_task_t *task)
 /* 为协程移出等待队列或改变在队列中的位置做准备，准备成功返回 0，失败返回 -1 */
 static int __cr_waitable_move_prepare(cr_waitable_t *waitable, cr_task_t *task)
 {
-    if (!waitable || !task) {
+    if (!waitable || !task || !task->cur_queue) {
+        return -1;
+    }
+    if (cr_is_task_in_waitable(task, waitable)) {
         return -1;
     }
     if (list_empty_careful(task->list_head)) {
@@ -108,6 +113,7 @@ int cr_waitable_remove(cr_waitable_t *waitable, cr_task_t *task)
         return -1;
     }
     list_del_init(task->list_head);
+    task->cur_queue = NULL;
     return 0;
 }
 

@@ -8,6 +8,8 @@
 
 /* 判断是否有协程在等待一个可等待实体 */
 #define cr_is_waitable_busy(wtb)  (!list_empty_careful((wtb)->wait_queue))
+#define cr_is_task_in_waitable(task, waitable)  \
+    ((task)->cur_queue == (cr_waitable_get))
 
 int cr_waitable_init(cr_waitable_t *waitable);
 int cr_waitable_push(cr_waitable_t *waitable, cr_task_t *task);

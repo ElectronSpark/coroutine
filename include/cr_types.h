@@ -11,9 +11,16 @@
 /* 协程入口函数原型 */
 typedef void *(*cr_function_t)(void *param);
 
+/* 可等待实体，作为协程的等待队列，协程间协作的基础 */
+struct cr_waitable_struct {
+    struct list_head    wait_queue[1];
+};
+typedef struct cr_waitable_struct   cr_waitable_t;
+
 /* 协程控制块 */
 struct cr_task_struct {
     struct list_head    list_head[1];
+    cr_waitable_t       *cur_queue;
     struct {
         int     alive: 1;
         int     ready: 1;
@@ -27,12 +34,6 @@ struct cr_task_struct {
     cr_function_t   entry;
 };
 typedef struct cr_task_struct       cr_task_t;
-
-/* 可等待实体，作为协程的等待队列，协程间协作的基础 */
-struct cr_waitable_struct {
-    struct list_head    wait_queue[1];
-};
-typedef struct cr_waitable_struct   cr_waitable_t;
 
 /* 全局协程表 */
 struct cr_global_control_table_struct {

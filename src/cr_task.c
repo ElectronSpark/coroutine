@@ -22,6 +22,7 @@ static void __tcb_init(cr_task_t *task, cr_function_t entry, void *arg,
                       void *stack_base, size_t stack_size)
 {
     INIT_LIST_HEAD(task->list_head);
+    task->cur_queue = NULL;
     task->stack_base = stack_base;
     task->stack_size = stack_size;
     task->arg = arg;
