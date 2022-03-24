@@ -58,9 +58,9 @@ struct cr_channel_struct {
         int     opened: 1;
     }   flag;
     
-    size_t buffer_size; /* 缓冲区能容纳的项个数 */
-    int pos;    /* 缓冲区的当前位置指针 */
-    int count;  /* 缓冲区当前所存放的项个数 */
+    unsigned int buffer_size;   /* 缓冲区能容纳的项个数 */
+    unsigned int pos;   /* 缓冲区的当前位置指针 */
+    unsigned int count; /* 缓冲区当前所存放的项个数 */
     void *data[0];
 };
 typedef struct cr_channel_struct    cr_channel_t;
