@@ -55,7 +55,7 @@ static int __cr_waitable_move_prepare(cr_waitable_t *waitable, cr_task_t *task)
     if (!waitable || !task || !task->cur_queue) {
         return -1;
     }
-    if (cr_is_task_in_waitable(task, waitable)) {
+    if (!cr_is_task_in_waitable(task, waitable)) {
         return -1;
     }
     if (list_empty_careful(task->list_head)) {

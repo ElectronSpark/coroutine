@@ -13,7 +13,7 @@ ARCH_INC = $(ARCH_DIR)/include
 INC_DIR = $(CURDIR) $(CURDIR)/include $(CURDIR)/external/include $(ARCH_INC)
 SRC_DIR = $(CURDIR)/src $(CURDIR)/external/src $(ARCH_DIR)/src
 
-CFLAGS = $(foreach each,$(INC_DIR),-I$(each))
+CFLAGS = $(foreach each,$(INC_DIR),-I$(each)) -g -O0
 ASFLAGS = $(CFLAGS)
 
 EXP_DIR = $(CURDIR)/example

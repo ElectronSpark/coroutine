@@ -7,6 +7,10 @@
 // cr_context_t *__cr_switch_to(void *prev, void *next, cr_context_t *last);
 .globl __cr_switch_to
 __cr_switch_to:
+    callq   __cr_switch_to_impl
+    retq
+
+__cr_switch_to_impl:
     movq    %rax,    0x00(%rdi)
     movq    %rbx,    0x08(%rdi)
     movq    %rcx,    0x10(%rdi)
@@ -76,8 +80,7 @@ __cr_save_gp_regs:
     movq    %r13,   0x68(%rax)
     movq    %r14,   0x70(%rax)
     movq    %r15,   0x78(%rax)
-    xorq    %rax,   %rax
-    ret
+    retq
 
 
 // void __cr_context_init(void *arg1, void *arg2,
@@ -86,20 +89,16 @@ __cr_save_gp_regs:
 .globl __cr_context_init
 __cr_context_init:
     pushq   %rbp
-    pushq   %rax
     movq    %rsp,   %rbp
 
     movq    %rcx,   %rsp
     movq    %r9,    %rax
-    call    __cr_save_gp_regs
-    test    %rax,   %rax
-    jz      __ret_from_context_init
+    subq    $8,     %rsp
+    callq   __cr_save_gp_regs
+    pushq   %r8
+    movq    %rsp,   0x30(%rax)
+    xor     %rax,   %rax
 
-    addq    $8,     %rsp
-    callq   *%r8
-
-__ret_from_context_init:
     movq    %rbp,   %rsp
-    popq    %rax
     popq    %rbp
     ret

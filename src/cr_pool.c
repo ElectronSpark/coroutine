@@ -76,14 +76,14 @@ static cr_pool_node_t *__node_alloc(size_t block_size, size_t buffer_size)
     INIT_LIST_HEAD(new_node->index_head);
 
     /* 将所有内存池对象穿成一个链表 */
-    void *buffer_end = new_buffer + buffer_size;
-    void *last_ptr = new_buffer;
+    void *last_ptr = NULL;
     void *next_ptr = new_buffer;
-    do {
+    for (int i = 1; i < blocks_num; i++) {
         last_ptr = next_ptr;
-        next_ptr = last_ptr + block_size;
+        next_ptr += block_size;
         *(void **)last_ptr = next_ptr;
-    } while (next_ptr < buffer_end);
+    }
+
     *(void **)last_ptr = NULL;
 
     return new_node;
@@ -233,7 +233,7 @@ static void *__pop_node_block(cr_pool_node_t *node)
         return NULL;
     }
 
-    if ((ptr = node->first_free) != NULL) {
+    if ((ptr = node->first_free) == NULL) {
         return NULL;
     }
 
@@ -358,7 +358,7 @@ void *cr_pool_block_alloc(cr_pool_t *pool)
         if (!node) {
             return NULL;
         }
-        if (!__node_attach(pool, node) != 0) {
+        if (__node_attach(pool, node) != 0) {
             __node_free(node);
             return NULL;
         }

@@ -80,10 +80,10 @@ static int __cr_task_switch_to(cr_task_t *task)
 {
     /* 在栈里保存当前协程的协程控制块，用于返回当前协程后重新设置当前协程 */
     cr_task_t *self = cr_self();
-    cr_context_t *last = NULL;
+    cr_task_t *last = NULL;
     __asm__ __volatile__("nop\n\t");    /* 防止编译器优化 */
 
-    last = cr_switch_to(cr_self()->regs, task->regs);
+    last = cr_switch_to(cr_self()->regs, task->regs, cr_self());
     cr_set_current_task(self);  /* 当前协程的协程控制块保存在当前栈的上下文中 */
 
     return 0;
@@ -154,10 +154,10 @@ int cr_task_init(cr_task_t *task, cr_function_t entry, void *arg)
                     (void *)task);
 
     if (__cr_task_register(task) != 0) {
-        return cr_wakeup(task);
+        return -1;
     }
 
-    return -1;
+    return cr_wakeup(task);
 }
 
 /* 创建一个新的协程，并返回协程控制块 */

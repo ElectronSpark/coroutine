@@ -14,14 +14,15 @@ extern void __cr_context_init(void *arg1, void *arg2,
                               void *func_entry, void *regs);
 
 /* 上下文切换的 cpu 特定实现 */
-static inline cr_context_t *cr_switch_to(cr_context_t *prev,
-                                         cr_context_t *next)
+static inline void *cr_switch_to(cr_context_t *prev,
+                                         cr_context_t *next,
+                                         void *retval)
 {
     if (!prev || !next) {
         return NULL;
     }
 
-    return __cr_switch_to(prev->gp_regs, next->gp_regs, prev);
+    return __cr_switch_to(prev->gp_regs, next->gp_regs, retval);
 }
 
 /* 初始化协程上下文 */
