@@ -18,7 +18,8 @@ ASFLAGS = $(CFLAGS)
 
 EXP_DIR = $(CURDIR)/example
 EXP_SRC =	\
-	$(EXP_DIR)/eventloop.c
+	$(EXP_DIR)/eventloop.c	\
+	$(EXP_DIR)/channel.c
 EXP_BIN = $(foreach each,$(EXP_SRC),$(subst .c,.elf,$(each)))
 
 C_FILES =	\

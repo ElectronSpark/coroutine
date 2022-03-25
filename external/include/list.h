@@ -289,7 +289,7 @@ static inline int list_is_last(const struct list_head *list,
  */
 static inline int list_empty(const struct list_head *head)
 {
-	return READ_ONCE(head->next) == head;
+	return head->next == head;
 }
 
 /**
@@ -307,7 +307,7 @@ static inline void list_del_init_careful(struct list_head *entry)
 {
 	__list_del_entry(entry);
 	entry->prev = entry;
-	smp_store_release(&entry->next, entry);
+	entry->next = entry;
 }
 
 /**
@@ -325,7 +325,7 @@ static inline void list_del_init_careful(struct list_head *entry)
  */
 static inline int list_empty_careful(const struct list_head *head)
 {
-	struct list_head *next = smp_load_acquire(&head->next);
+	struct list_head *next = head->next;
 	return (next == head) && (next == head->prev);
 }
 

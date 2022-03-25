@@ -20,7 +20,7 @@ static int __cr_waitable_push_prepare(cr_waitable_t *waitable, cr_task_t *task)
     if (!waitable || !task || task->cur_queue) {
         return -1;
     }
-    if (!list_empty_careful(task->list_head)) {
+    if (!list_empty(task->list_head)) {
         return -1;
     }
     return 0;
@@ -58,7 +58,7 @@ static int __cr_waitable_move_prepare(cr_waitable_t *waitable, cr_task_t *task)
     if (!cr_is_task_in_waitable(task, waitable)) {
         return -1;
     }
-    if (list_empty_careful(task->list_head)) {
+    if (list_empty(task->list_head)) {
         return -1;
     }
     return 0;
@@ -180,7 +180,8 @@ int cr_await(cr_waitable_t *waitable)
 
     if (__cr_await_prepare(waitable, task) == 0) {
         cr_waitable_push_tail(waitable, task);
+        return cr_yield();
     }
-
-    return cr_yield();
+    
+    return -1;
 }

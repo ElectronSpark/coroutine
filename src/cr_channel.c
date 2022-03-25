@@ -54,7 +54,7 @@ static inline int __ch_buffer_push(cr_channel_t *ch, void *data)
         return -1;
     }
 
-    ch->data[__ch_pos_current(ch)] = data;
+    ch->data[__ch_pos_tail(ch)] = data;
     ch->count += 1;
 
     return 0;
@@ -137,6 +137,9 @@ int cr_channel_recv(cr_channel_t *ch, void **data)
 
     if (cr_is_chan_empty(ch)) {
         cr_await(ch->waitable);
+        if (!__ch_is_opened_valid(ch)) {
+            return -1;
+        }
     }
     ret = __ch_buffer_pop(ch, &tmp_data);
     if (ret != 0) {
@@ -158,7 +161,7 @@ int cr_channel_send(cr_channel_t *ch, void *data)
     }
 
     /* 尝试清空缓冲 */
-    if (!__ch_buffer_full(ch)) {
+    while (__ch_buffer_full(ch)) {
         cr_channel_flush(ch);
     }
 
@@ -177,6 +180,9 @@ int cr_channel_flush(cr_channel_t *ch)
     tmp = cr_chan_count(ch);
 
     for (unsigned int i = 0; i < tmp; i++) {
+        if (!cr_is_waitable_busy(ch->waitable)) {
+            break;
+        }
         if (cr_waitable_notify(ch->waitable) != 0) {
             break;
         }

@@ -21,7 +21,6 @@ static void __entry(void *param) {
 
 int main(void)
 {
-    printf("hello world!\n");
     cr_init();
 
     for (long i = 0; i < CR_TOP_ENTRY_TASK_NUM; i++) {

@@ -7,7 +7,7 @@
 
 
 /* 判断是否有协程在等待一个可等待实体 */
-#define cr_is_waitable_busy(wtb)  (!list_empty_careful((wtb)->wait_queue))
+#define cr_is_waitable_busy(wtb)  (!list_empty((wtb)->wait_queue))
 #define cr_is_task_in_waitable(task, waitable)  \
     ((task)->cur_queue == (waitable))
 
