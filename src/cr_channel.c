@@ -180,9 +180,6 @@ int cr_channel_flush(cr_channel_t *ch)
     tmp = cr_chan_count(ch);
 
     for (unsigned int i = 0; i < tmp; i++) {
-        if (!cr_is_waitable_busy(ch->waitable)) {
-            break;
-        }
         if (cr_waitable_notify(ch->waitable) != 0) {
             break;
         }
