@@ -4,6 +4,7 @@
 
 #include <stddef.h>
 
+#include <rbtree.h>
 #include <cpu_types.h>
 #include <list_types.h>
 
@@ -70,7 +71,7 @@ typedef struct cr_channel_struct    cr_channel_t;
 typedef struct cr_pool_struct   cr_pool_t;
 struct cr_pool_node_struct {
     struct list_head    list_head[1];
-    struct list_head    index_head[1];   /* 用于在释放内存池对象的时候对内存池节点进行定位 */
+    struct rb_node      rb_node[1];     /* 用于定位内存池节点的红黑树根 */
     cr_pool_t   *pool;
     
     size_t  block_size;
@@ -85,7 +86,7 @@ struct cr_pool_node_struct {
 typedef struct cr_pool_node_struct  cr_pool_node_t;
 
 struct cr_pool_struct {
-    struct list_head    nodes[1];   /* 用于在释放内存池对象的时候对内存池节点进行定位 */
+    struct rb_root      rb_root[1];     /* 用于定位内存池节点的红黑树根 */
     struct list_head    full[1];
     struct list_head    partial[1];
     struct list_head    free[1];

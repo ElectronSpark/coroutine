@@ -20,7 +20,7 @@ int cr_pool_init(cr_pool_t *pool, size_t pool_size, size_t block_size,
         return -1;
     }
 
-    INIT_LIST_HEAD(pool->nodes);
+    pool->rb_root[0] = RB_ROOT;
     INIT_LIST_HEAD(pool->full);
     INIT_LIST_HEAD(pool->partial);
     INIT_LIST_HEAD(pool->free);
@@ -73,7 +73,7 @@ static cr_pool_node_t *__node_alloc(size_t block_size, size_t buffer_size)
     new_node->buffer = new_buffer;
     new_node->first_free = new_buffer;
     INIT_LIST_HEAD(new_node->list_head);
-    INIT_LIST_HEAD(new_node->index_head);
+    RB_CLEAR_NODE(new_node->rb_node);
 
     /* 将所有内存池对象穿成一个链表 */
     void *last_ptr = NULL;
@@ -87,6 +87,40 @@ static cr_pool_node_t *__node_alloc(size_t block_size, size_t buffer_size)
     *(void **)last_ptr = NULL;
 
     return new_node;
+}
+
+/* 将一个节点加入红黑树中 */
+static int __pool_add_rb(cr_pool_node_t *new_node,
+                         struct rb_root *rb_tree)
+{
+    cr_pool_node_t *tmp_node = NULL;
+    struct rb_node *rb_parent = NULL;
+    struct rb_node **rb_link = &rb_tree->rb_node;
+    void *buffer_end = new_node->node_size + new_node->buffer;
+
+    while (*rb_link != NULL) {
+        rb_parent = *rb_link;
+        tmp_node = rb_entry(rb_parent, cr_pool_node_t, rb_node);
+        if (buffer_end >= tmp_node->buffer) {
+            rb_link = &rb_parent->rb_left;
+        } else if (new_node->buffer < tmp_node->buffer + tmp_node->node_size) {
+            rb_link = &rb_parent->rb_right;
+        } else {
+            return -1;
+        }
+    }
+
+    rb_link_node(new_node->rb_node, rb_parent, rb_link);
+    rb_insert_color(new_node->rb_node, rb_tree);
+    return 0;
+}
+
+/* 从红黑树中删除一个节点 */
+static void __pool_del_rb(cr_pool_node_t *new_node,
+                          struct rb_root *rb_tree)
+{
+    rb_erase(new_node->rb_node, rb_tree);
+    RB_CLEAR_NODE(new_node->rb_node);
 }
 
 /* 将一个内存池节点加到加入内存池 */
@@ -105,22 +139,12 @@ static int __node_attach(cr_pool_t *pool, cr_pool_node_t *node)
         return -1;
     }
 
+    /* 插入到红黑树中 */
+    if (__pool_add_rb(node, pool->rb_root) != 0) {
+        return -1;
+    }
     /* 加入到用于定位内存池节点的链表中，需要进行排序操作 */
     node->pool = pool;
-    /* 如果当前内存池没有节点，直接插入 */
-    if (list_empty(pool->nodes)) {
-        pos = pool->nodes;
-    } else {
-        /* 找到合适的后继节点 */
-        list_for_each(pos, pool->nodes) {
-            pos_entry = list_entry(pos, cr_pool_node_t, index_head[0]);
-            if (pos_entry->buffer >= node->buffer + node->node_size) {
-                break;
-            }
-        }
-    }
-    /* 插入到找到的节点之前 */
-    list_add_tail(node->index_head, pos);
     
     /* 加入到对应的链表中 */
     if (node->block_used == 0) {
@@ -162,7 +186,7 @@ static int __node_detach(cr_pool_node_t *node)
     }
 
     list_del_init(node->list_head);
-    list_del_init(node->index_head);
+    __pool_del_rb(node, pool->rb_root);
     pool->block_total -= node->block_total;
     pool->block_free -= node->block_free;
     pool->block_used -= node->block_used;
@@ -184,19 +208,23 @@ static void __node_free(cr_pool_node_t *node)
 /* 查找给定地址所在的内存池节点 */
 static cr_pool_node_t *__find_pool_node(cr_pool_t *pool, void *ptr)
 {
-    struct list_head *pos = NULL;
-    cr_pool_node_t *pos_entry = NULL;
-    list_for_each(pos, pool->nodes) {
-        pos_entry = list_entry(pos, cr_pool_node_t, index_head[0]);
-        if (pos_entry->buffer <= ptr &&
-            ptr < pos_entry->buffer + pos_entry->node_size
-        ) {
-            break;
+    cr_pool_node_t *tmp_node = NULL;
+    struct rb_node *node = NULL;
+    struct rb_node **rb_link = &pool->rb_root->rb_node;
+
+    while (*rb_link != NULL) {
+        node = *rb_link;
+        tmp_node = rb_entry(node, cr_pool_node_t, rb_node);
+        if (ptr >= tmp_node->buffer + tmp_node->node_size) {
+            rb_link = &node->rb_left;
+        } else if (ptr < tmp_node->buffer) {
+            rb_link = &node->rb_right;
+        } else {
+            return tmp_node;
         }
-        pos_entry = NULL;
     }
 
-    return pos_entry;
+    return NULL;
 }
 
 /* 将内存池对象放入内存池节点中 */
@@ -298,7 +326,7 @@ int cr_pool_node_free_all(cr_pool_t *pool)
         return -1;
     }
 
-    list_for_each_entry_safe(pos, n, pool->nodes, index_head[0]) {
+    rbtree_postorder_for_each_entry_safe(pos, n, pool->rb_root, rb_node[0]) {
         __node_detach(pos);
         __node_free(pos);
     }

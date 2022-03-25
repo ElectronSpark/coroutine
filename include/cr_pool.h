@@ -12,7 +12,7 @@
 
 /* 静态初始化内存池 */
 #define CR_POOL_INIT(name, bsize, nsize, wmark) {   \
-    .nodes = { LIST_HEAD_INIT((name).nodes[0]) },   \
+    .rb_root = { RB_ROOT }, \
     .full = { LIST_HEAD_INIT((name).full[0]) }, \
     .partial = { LIST_HEAD_INIT((name).partial[0]) },   \
     .free = { LIST_HEAD_INIT((name).free[0]) },  \
