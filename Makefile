@@ -36,7 +36,7 @@ ASM_OBJS = $(foreach each,$(ASM_FILES),$(subst .S,.o,$(each)))
 OBJS = $(ASM_OBJS) $(C_OBJS)
 TARGET = libcoroutine.a
 
-all: build
+all: build example
 	@echo all -- done
 
 example: $(EXP_BIN)
