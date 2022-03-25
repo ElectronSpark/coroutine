@@ -78,7 +78,7 @@ static cr_pool_node_t *__node_alloc(size_t block_size, size_t buffer_size)
     /* 将所有内存池对象穿成一个链表 */
     void *last_ptr = NULL;
     void *next_ptr = new_buffer;
-    for (int i = 1; i < blocks_num; i++) {
+    for (int i = 0; i < blocks_num; i++) {
         last_ptr = next_ptr;
         next_ptr += block_size;
         *(void **)last_ptr = next_ptr;
@@ -124,13 +124,13 @@ static int __node_attach(cr_pool_t *pool, cr_pool_node_t *node)
     
     /* 加入到对应的链表中 */
     if (node->block_used == 0) {
-        list_add(pool->free, node->list_head);
+        list_add(node->list_head, pool->free);
         pool->free_nodes += 1;
     } else if (node->block_used < node->block_total) {
-        list_add(pool->partial, node->list_head);
+        list_add(node->list_head, pool->partial);
         pool->partial_nodes += 1;
     } else {
-        list_add(pool->full, node->list_head);
+        list_add(node->list_head, pool->full);
         pool->full_nodes += 1;
     }
 
@@ -259,6 +259,7 @@ int cr_pool_node_expand(cr_pool_t *pool)
     }
 
     if ((ret = __node_attach(pool, new_node)) != 0) {
+        __node_free(new_node);
         return ret;
     }
 
@@ -276,7 +277,7 @@ int cr_pool_node_shrink(cr_pool_t *pool)
     }
 
     while (pool->block_free > pool->water_mark && !list_empty(pool->free)) {
-        node = list_first_entry(pool->free, cr_pool_node_t, index_head[0]);
+        node = list_first_entry(pool->free, cr_pool_node_t, list_head[0]);
         if (__node_detach(node) != 0) {
             break;
         }
@@ -310,26 +311,32 @@ int cr_pool_node_free_all(cr_pool_t *pool)
 static void __adjust_node_list(cr_pool_node_t *node, int origin_used)
 {
     cr_pool_t *pool = NULL;
+    int delta = 0;
+    int blocks = 0;
 
     if (!node || (pool = node->pool) == NULL) {
         return;
     }
 
+    blocks = pool->node_size / pool->block_size;
 
     list_del_init(node->list_head);
     if (origin_used == 0) {
         pool->free_nodes -= 1;
-    } else if (origin_used < pool->node_size / pool->block_size) {
+    } else if (origin_used < blocks) {
         pool->partial_nodes -= 1;
     } else {
         pool->full_nodes -= 1;
     }
 
+    delta = node->block_used - origin_used;
+    pool->block_used += delta;
+    pool->block_free -= delta;
 
     if (node->block_used == 0) {
         pool->free_nodes += 1;
         list_add(node->list_head, pool->free);
-    } else if (node->block_used < pool->node_size / pool->block_size) {
+    } else if (node->block_used < blocks) {
         pool->partial_nodes += 1;
         list_add(node->list_head, pool->partial);
     } else {
@@ -354,14 +361,10 @@ void *cr_pool_block_alloc(cr_pool_t *pool)
     } else if (!list_empty(pool->free)) {
          node = list_first_entry(pool->free, cr_pool_node_t, list_head[0]);
     } else {
-        node = __node_alloc(pool->block_size, pool->node_size);
-        if (!node) {
+        if (cr_pool_node_expand(pool) != 0) {
             return NULL;
         }
-        if (__node_attach(pool, node) != 0) {
-            __node_free(node);
-            return NULL;
-        }
+        node = list_first_entry(pool->free, cr_pool_node_t, list_head[0]);
     }
 
     origin_used = node->block_used;
@@ -386,5 +389,7 @@ void cr_pool_block_free(cr_pool_t *pool, void *ptr)
         origin_used = node->block_used;
         __push_node_block(node, ptr);
         __adjust_node_list(node, origin_used);
+
+        cr_pool_node_shrink(pool);
     }
 }
