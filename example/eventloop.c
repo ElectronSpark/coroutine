@@ -4,19 +4,17 @@
 int count1 = 0;
 int count2 = 0;
 
-static void *__entry1(void *param) {
+static void __entry1(void *param) {
     count2 += 1;
     cr_task_exit();
     count2 -= 1;
-    return NULL;
 }
 
-static void *__entry(void *param) {
+static void __entry(void *param) {
     count1 += 1;
     cr_task_create(__entry1, param);
     cr_task_exit();
     count2 -= 1;
-    return NULL;
 }
 
 int main(void)
