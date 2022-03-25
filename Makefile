@@ -13,9 +13,13 @@ ARCH_INC = $(ARCH_DIR)/include
 INC_DIR = $(CURDIR) $(CURDIR)/include $(CURDIR)/external/include $(ARCH_INC)
 SRC_DIR = $(CURDIR)/src $(CURDIR)/external/src $(ARCH_DIR)/src
 
-CFLAGS = $(foreach each,$(INC_DIR),-I$(each)) -c
+CFLAGS = $(foreach each,$(INC_DIR),-I$(each))
 ASFLAGS = $(CFLAGS)
 
+EXP_DIR = $(CURDIR)/example
+EXP_SRC =	\
+	$(EXP_DIR)/eventloop.c
+EXP_BIN = $(foreach each,$(EXP_SRC),$(subst .c,.elf,$(each)))
 
 C_FILES =	\
 	$(CURDIR)/src/coroutine.c	\
@@ -32,19 +36,29 @@ ASM_OBJS = $(foreach each,$(ASM_FILES),$(subst .S,.o,$(each)))
 OBJS = $(ASM_OBJS) $(C_OBJS)
 TARGET = libcoroutine.a
 
-all: $(TARGET)
-	@echo $(OBJS)
+all: build
+	@echo all -- done
+
+example: $(EXP_BIN)
+	@echo examples -- done
+
+$(EXP_BIN):%.elf:%.c build
+	$(CC) $(CFLAGS) $< -o $@ $(TARGET)
+
+build: $(TARGET)
+	@echo build -- done
 
 $(TARGET): $(OBJS)
 	$(AR) cqs $@ $^
 
 $(C_OBJS):%.o:%.c
-	$(CC) $(CFLAGS) $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(ASM_OBJS):%.o:%.S
-	$(CC) $(ASFLAGS) $< -o $@
+	$(CC) $(ASFLAGS) -c $< -o $@
 
 clean:
 	rm $(OBJS) $(TARGET)
+	rm $(EXP_BIN)
 
-.PHONY = all library objs clean
+.PHONY = all library example clean
