@@ -19,7 +19,8 @@ ASFLAGS = $(CFLAGS)
 EXP_DIR = $(CURDIR)/example
 EXP_SRC =	\
 	$(EXP_DIR)/eventloop.c	\
-	$(EXP_DIR)/channel.c
+	$(EXP_DIR)/channel.c	\
+	$(EXP_DIR)/producer_customer.c
 EXP_BIN = $(foreach each,$(EXP_SRC),$(subst .c,.elf,$(each)))
 
 C_FILES =	\
@@ -28,6 +29,7 @@ C_FILES =	\
 	$(CURDIR)/src/cr_pool.c	\
 	$(CURDIR)/src/cr_task.c	\
 	$(CURDIR)/src/cr_waitable.c	\
+	$(CURDIR)/src/cr_semaphore.c	\
 	$(CURDIR)/external/src/rbtree.c
 ASM_FILES =	\
 	$(ARCH_DIR)/src/cpu.S

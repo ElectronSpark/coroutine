@@ -51,6 +51,18 @@ struct cr_global_control_table_struct {
 };
 typedef struct cr_global_control_table_struct   cr_gct_t;
 
+/* 信号量 */
+struct cr_semaphore_struct {
+    int             value;
+    int             limit;
+    struct {
+        int     valid: 1;
+        int     opened: 1;
+    } flag;
+    cr_waitable_t   waitable[1];
+};
+typedef struct cr_semaphore_struct  cr_sem_t;
+
 /* 通道 */
 struct cr_channel_struct {
     cr_waitable_t   receivers[1];
