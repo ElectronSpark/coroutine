@@ -15,6 +15,7 @@ static void __entry1(void *param) {
 static void __entry(void *param) {
     count1 += 1;
     cr_task_create(__entry1, param);
+    cr_yield();
     cr_task_exit();
     count2 -= 1;
 }
