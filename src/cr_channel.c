@@ -9,6 +9,7 @@
 #define __ch_flag_unset_opened(ch)  do { (ch)->flag.opened = 0; } while (0)
 
 #define __ch_buffer_size(ch)    ((ch)->buffer_size)
+#define __ch_buffer_empty(ch)   (cr_chan_count(ch) == 0)
 #define __ch_buffer_full(ch)    (cr_chan_count(ch) >= __ch_buffer_size(ch))
 #define __ch_pos_current(ch)    ((ch)->pos)
 #define __ch_pos_index(ch, cnt)  \
@@ -36,7 +37,7 @@ static inline int __ch_is_opened_valid(cr_channel_t *ch)
 /* 从管道的缓存中取出一项数据，并将其从管道中删除 */
 static inline int __ch_buffer_pop(cr_channel_t *ch, void **buffer)
 {
-    if (cr_is_chan_empty(ch)) {
+    if (__ch_buffer_empty(ch)) {
         return -1;
     }
 
@@ -60,6 +61,46 @@ static inline int __ch_buffer_push(cr_channel_t *ch, void *data)
     return 0;
 }
 
+/* 当前协程作为接收方唤醒发送方 */
+static inline int __ch_notify_sender(cr_channel_t *ch)
+{
+    cr_task_t *task = NULL;
+
+    if (cr_chan_sender(ch) != cr_self()) {
+        task = cr_chan_sender(ch);
+        ch->sender = NULL;
+        return cr_wakeup(task);
+    }
+
+    return 0;
+}
+
+/* 当前协程作为发送者等待接受者从管道中读取数据 */
+static inline int __ch_sender_wait(cr_channel_t *ch)
+{
+    int ret = -1;
+
+    if (__ch_buffer_empty(ch)) {
+        return -1;
+    }
+
+    if (!cr_is_chan_occupied(ch)) {
+        ch->sender = cr_self();
+        ret = cr_suspend(cr_self());
+        if (cr_yield() != 0) {
+            ret = -1;
+        }
+    } else if (cr_chan_sender(ch) == cr_self()) {
+        ret = cr_suspend(cr_self());
+        if (cr_yield() != 0) {
+            ret = -1;
+        }
+    }
+
+    return ret;
+}
+
+
 /* 初始化管道。缓存的大小会被调整到大于等于 1 */
 int cr_channel_init(cr_channel_t *ch, unsigned int buffer_size)
 {
@@ -67,7 +108,7 @@ int cr_channel_init(cr_channel_t *ch, unsigned int buffer_size)
         return -1;
     }
 
-    if (cr_waitable_init(ch->waitable) != 0) {
+    if (cr_waitable_init(ch->receivers) != 0) {
         return -1;
     }
 
@@ -89,7 +130,7 @@ int cr_channel_close(cr_channel_t *ch)
     }
 
     __ch_flag_unset_opened(ch);
-    ret = cr_waitable_notify_all(ch->waitable);
+    ret = cr_waitable_notify_all(ch->receivers);
     cr_yield();
     return ret;
 }
@@ -135,8 +176,8 @@ int cr_channel_recv(cr_channel_t *ch, void **data)
         return -1;
     }
 
-    if (cr_is_chan_empty(ch)) {
-        cr_await(ch->waitable);
+    if (__ch_buffer_empty(ch)) {
+        cr_await(ch->receivers);
         if (!__ch_is_opened_valid(ch)) {
             return -1;
         }
@@ -145,6 +186,7 @@ int cr_channel_recv(cr_channel_t *ch, void **data)
     if (ret != 0) {
         return ret;
     }
+    __ch_notify_sender(ch);
     *data = tmp_data;
 
     return 0;
@@ -178,13 +220,14 @@ int cr_channel_flush(cr_channel_t *ch)
     }
 
     tmp = cr_chan_count(ch);
-
-    for (unsigned int i = 0; i < tmp; i++) {
-        if (cr_waitable_notify(ch->waitable) != 0) {
-            break;
+    if (tmp > 0) {
+        for (unsigned int i = 0; i < tmp; i++) {
+            if (cr_waitable_notify(ch->receivers) != 0) {
+                break;
+            }
         }
+        return __ch_sender_wait(ch);
     }
-    cr_yield();
 
-    return -1;
+    return 0;
 }

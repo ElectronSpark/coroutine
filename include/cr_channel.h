@@ -6,8 +6,10 @@
 
 
 #define cr_chan_count(ch)       ((ch)->count)
+#define cr_chan_sender(ch)      ((ch)->sender)
+
 #define cr_is_chan_open(ch)     ((ch)->flag.opened)
-#define cr_is_chan_empty(ch)    (cr_chan_count(ch) == 0)
+#define cr_is_chan_occupied(ch) (!!cr_chan_sender(ch))
 
 
 /* 管道的开关 */

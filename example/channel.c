@@ -3,11 +3,12 @@
 
 #define CR_CHANNELS_NUM     100000
 #define CR_CH_GROUP_SIZE    16
+#define CR_CH_BUFFER_ITEMS  3
 
 
 struct my_channel {
     cr_channel_t    ch[1];
-    void    *buffer;
+    void    *buffer[CR_CH_BUFFER_ITEMS];
 };
 
 int send_count = 0;
@@ -57,7 +58,7 @@ int main(void)
     cr_init();
 
     for (long i = 0; i < CR_CHANNELS_NUM; i++) {
-        cr_channel_init(ch[i].ch, 0);
+        cr_channel_init(ch[i].ch, CR_CH_BUFFER_ITEMS);
         cr_task_create(__sender_entry, (void *)ch[i].ch);
         for (int j = 1; j < CR_CH_GROUP_SIZE; j++) {
             cr_task_create(__receiver_entry, (void *)ch[i].ch);
