@@ -117,4 +117,31 @@ struct cr_pool_struct {
 };
 typedef struct cr_pool_struct   cr_pool_t;
 
+/* 事件 */
+/* 作为事件的 id，在事件被触发时会根据事件的 id来定位需要唤醒的任务 */
+typedef unsigned long   cr_eid_t;
+
+typedef struct cr_event_control_struct  cr_event_t;
+struct cr_event_node_struct {
+    struct rb_node  rb_node[1];
+    cr_eid_t        eid;
+    cr_task_t       *task;
+    cr_event_t      *event;
+    void            *data;
+    void            *ret_data;
+};
+typedef struct cr_event_node_struct cr_event_node_t;
+
+struct cr_event_control_struct {
+    struct rb_root  nodes[1];
+    int             count;
+    cr_waitable_t   waitable[1];
+    cr_function_t   handler;
+    struct {
+        int     active: 1;
+    } flag;
+    cr_event_node_t *last_found;
+};
+typedef struct cr_event_control_struct  cr_event_t;
+
 #endif /* __CR_TYPES_H__ */

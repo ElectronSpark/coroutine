@@ -100,7 +100,7 @@ static int __pool_add_rb(cr_pool_node_t *new_node,
 
     while (*rb_link != NULL) {
         rb_parent = *rb_link;
-        tmp_node = rb_entry(rb_parent, cr_pool_node_t, rb_node);
+        tmp_node = rb_entry(rb_parent, cr_pool_node_t, rb_node[0]);
         if (buffer_end >= tmp_node->buffer) {
             rb_link = &rb_parent->rb_left;
         } else if (new_node->buffer < tmp_node->buffer + tmp_node->node_size) {

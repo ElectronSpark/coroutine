@@ -7,6 +7,7 @@
 #include <cr_waitable.h>
 #include <cr_channel.h>
 #include <cr_semaphore.h>
+#include <cr_event.h>
 
 
 int cr_init(void);

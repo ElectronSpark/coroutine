@@ -5,6 +5,16 @@
         "coroutine.h": "c",
         "cr_task.h": "c",
         "cpu_specific.h": "c",
-        "cr_pool.h": "c"
+        "cr_pool.h": "c",
+        "cpu_types.h": "c",
+        "stddef.h": "c",
+        "signal.h": "c",
+        "signum-generic.h": "c",
+        "sigset_t.h": "c",
+        "sig_atomic_t.h": "c",
+        "types.h": "c",
+        "signum-arch.h": "c",
+        "cr_event.h": "c",
+        "rbtree_types.h": "c"
     }
 }

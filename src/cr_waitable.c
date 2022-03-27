@@ -144,6 +144,15 @@ int cr_waitable_notify(cr_waitable_t *waitable)
     return cr_wakeup(task);
 }
 
+/* 唤醒给定的一个协程 */
+int cr_waitable_notify_one(cr_waitable_t *waitable, cr_task_t *task)
+{
+    if (cr_waitable_remove(waitable, task) != 0) {
+        return -1;
+    }
+    return cr_wakeup(task);
+}
+
 /* 唤醒等待可等待实体的所有协程 */
 int cr_waitable_notify_all(cr_waitable_t *waitable)
 {
