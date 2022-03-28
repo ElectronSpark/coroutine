@@ -8,19 +8,19 @@
 
 
 /* 静态初始化一个事件控制块 */
-#define CR_EVENT_INIT(__name, __handler)    {   \
+#define CR_EVENT_INIT(__name)    {   \
     .nodes = { RB_ROOT },   \
     .count = 0, \
     .waitable = { CR_WAITABLE_INIT((__name).waitable[0]) }, \
-    .handler = (__handler), \
-    .flag = { .active = 1 }     \
+    .flag = { .active = 1 },    \
+    .last_found = NULL  \
 }
 /* 静态声明一个事件控制块 */
-#define CR_EVENT_DECLARE(name, handler) \
-    cr_event_t name = CR_EVENT_INIT(name, handler)
+#define CR_EVENT_DECLARE(name) \
+    cr_event_t name = CR_EVENT_INIT(name)
 
 
-int cr_event_init(cr_event_t *event, cr_function_t handler);
+int cr_event_init(cr_event_t *event);
 int cr_event_close(cr_event_t *event, void *data);
 int cr_event_wait(cr_event_t *event, cr_eid_t eid,
                   void *data, void **ret_data);

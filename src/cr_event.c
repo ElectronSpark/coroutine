@@ -128,9 +128,9 @@ static inline void __init_event_node(cr_event_node_t *node, cr_event_t *event,
 
 
 /* 初始化事件控制块 */
-int cr_event_init(cr_event_t *event, cr_function_t handler)
+int cr_event_init(cr_event_t *event)
 {
-    if (!event || !handler) {
+    if (!event) {
         return -1;
     }
 
@@ -138,7 +138,6 @@ int cr_event_init(cr_event_t *event, cr_function_t handler)
         return -1;
     }
     event->count = 0;
-    event->handler = handler;
     event->nodes[0] = RB_ROOT;
     event->flag.active = 1;
     

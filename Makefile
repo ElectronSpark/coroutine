@@ -20,7 +20,8 @@ EXP_DIR = $(CURDIR)/example
 EXP_SRC =	\
 	$(EXP_DIR)/eventloop.c	\
 	$(EXP_DIR)/channel.c	\
-	$(EXP_DIR)/producer_customer.c
+	$(EXP_DIR)/producer_customer.c	\
+	$(EXP_DIR)/event.c
 EXP_BIN = $(foreach each,$(EXP_SRC),$(subst .c,.elf,$(each)))
 
 C_FILES =	\

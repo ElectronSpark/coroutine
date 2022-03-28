@@ -136,7 +136,6 @@ struct cr_event_control_struct {
     struct rb_root  nodes[1];
     int             count;
     cr_waitable_t   waitable[1];
-    cr_function_t   handler;
     struct {
         int     active: 1;
     } flag;
