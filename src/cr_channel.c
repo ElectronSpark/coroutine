@@ -61,43 +61,24 @@ static inline int __ch_buffer_push(cr_channel_t *ch, void *data)
     return 0;
 }
 
-/* 当前协程作为接收方唤醒发送方 */
-static inline int __ch_notify_sender(cr_channel_t *ch)
+/* 尝试令当前协程作为一个管道的发送方 */
+static inline int __ch_claim_sender(cr_channel_t *ch)
 {
-    cr_task_t *task = NULL;
-
-    if (cr_chan_sender(ch) != cr_self()) {
-        task = cr_chan_sender(ch);
-        ch->sender = NULL;
-        return cr_wakeup(task);
+    if (ch->sender == NULL) {
+        ch->sender = cr_self();
+        return 0;
     }
-
-    return 0;
+    return (ch->sender == cr_self()) ? 0 : -1;
 }
 
-/* 当前协程作为发送者等待接受者从管道中读取数据 */
-static inline int __ch_sender_wait(cr_channel_t *ch)
+/* 尝试令当前协程作为一个管道的发送方 */
+static inline int __ch_claim_receiver(cr_channel_t *ch)
 {
-    int ret = -1;
-
-    if (__ch_buffer_empty(ch)) {
-        return -1;
+    if (ch->receiver == NULL) {
+        ch->receiver = cr_self();
+        return 0;
     }
-
-    if (!cr_is_chan_occupied(ch)) {
-        ch->sender = cr_self();
-        ret = cr_suspend(cr_self());
-        if (cr_yield() != 0) {
-            ret = -1;
-        }
-    } else if (cr_chan_sender(ch) == cr_self()) {
-        ret = cr_suspend(cr_self());
-        if (cr_yield() != 0) {
-            ret = -1;
-        }
-    }
-
-    return ret;
+    return (ch->receiver == cr_self()) ? 0 : -1;
 }
 
 
@@ -108,10 +89,12 @@ int cr_channel_init(cr_channel_t *ch, unsigned int buffer_size)
         return -1;
     }
 
-    if (cr_waitable_init(ch->receivers) != 0) {
+    if (cr_waitable_init(ch->waitable) != 0) {
         return -1;
     }
 
+    ch->receiver = NULL;
+    ch->sender = NULL;
     ch->buffer_size = buffer_size ? buffer_size : 1;
     ch->count = 0;
     ch->pos = 0;
@@ -130,7 +113,7 @@ int cr_channel_close(cr_channel_t *ch)
     }
 
     __ch_flag_unset_opened(ch);
-    ret = cr_waitable_notify_all(ch->receivers);
+    ret = cr_waitable_notify_all(ch->waitable);
     cr_yield();
     return ret;
 }
@@ -169,25 +152,30 @@ int cr_channel_destroy(cr_channel_t *ch)
 /* 从管道接收一项数据 */
 int cr_channel_recv(cr_channel_t *ch, void **data)
 {
-    int ret = -1;
     void *tmp_data = NULL;
 
     if (!data || !__ch_is_opened_valid(ch)) {
         return -1;
     }
 
+    if (__ch_claim_receiver(ch) != 0) {
+        return -1;
+    }
+
     if (__ch_buffer_empty(ch)) {
-        cr_await(ch->receivers);
+        cr_await(ch->waitable);
         if (!__ch_is_opened_valid(ch)) {
             return -1;
         }
     }
-    ret = __ch_buffer_pop(ch, &tmp_data);
-    if (ret != 0) {
-        return ret;
+    if (__ch_buffer_pop(ch, &tmp_data) != 0) {
+        return -1;
     }
-    __ch_notify_sender(ch);
     *data = tmp_data;
+
+    if (cr_is_waitable_busy(ch->waitable)) {
+        cr_waitable_notify(ch->waitable);
+    }
 
     return 0;
 }
@@ -199,6 +187,10 @@ int cr_channel_send(cr_channel_t *ch, void *data)
     void *tmp_data = NULL;
 
     if (!__ch_is_opened_valid(ch)) {
+        return -1;
+    }
+
+    if (__ch_claim_sender(ch) != 0) {
         return -1;
     }
 
@@ -219,14 +211,18 @@ int cr_channel_flush(cr_channel_t *ch)
         return -1;
     }
 
+    if (__ch_claim_sender(ch) != 0) {
+        return -1;
+    }
+
     tmp = cr_chan_count(ch);
     if (tmp > 0) {
         for (unsigned int i = 0; i < tmp; i++) {
-            if (cr_waitable_notify(ch->receivers) != 0) {
+            if (cr_waitable_notify(ch->waitable) != 0) {
                 break;
             }
         }
-        return __ch_sender_wait(ch);
+        return cr_await(ch->waitable);
     }
 
     return 0;

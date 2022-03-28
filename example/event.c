@@ -2,6 +2,7 @@
 #include <cr_event.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <signal.h>
 
 
@@ -67,7 +68,8 @@ static void __top_entry(void *param)
         return;
     }
     for (long i = 0; i < CR_EVENT_GROUP_SIZE; i++) {
-        cr_eid_t j = (eid + 1) * CR_EVENT_GROUP_SIZE * 2 + i;
+        cr_eid_t j = (eid + 1) * CR_EVENT_GROUP_SIZE + i;
+        j *= 2;
         if (cr_event_get_data(&__sevent, j, &ret_data) != 0) {
             continue;
         }
@@ -83,47 +85,65 @@ static void __top_entry(void *param)
 static void __sig_exit(int param)
 {
     printf("overtime!\n");
+    printf("CR_EVENT_GROUP_SIZE: %d, CR_TOP_TASK_NUM: %d\n",
+           CR_EVENT_GROUP_SIZE, CR_TOP_TASK_NUM);
+    printf("count1: %d, count2: %d, count3: %d\n", count1, count2, count3);
     exit(0);
 }
 
 static void __sig_handler(int param)
 {
+    static int flag = 0;
     void *ret_data = (void *)0xfdfdfdfd;
 
-    printf("alarm\n");
-    for (long i = 0; i < CR_TOP_TASK_NUM; i++) {
-        if (cr_event_get_data(&__alarm, (cr_eid_t)i, &ret_data) != 0) {
-            continue;
+    if (flag++ == 0) {
+        printf("alarm\n");
+        for (long i = 0; i < CR_TOP_TASK_NUM; i++) {
+            if (cr_event_get_data(&__alarm, (cr_eid_t)i, &ret_data) != 0) {
+                continue;
+            }
+            if ((long)ret_data != i) {
+                continue;
+            }
+            cr_event_notify(&__alarm, (cr_eid_t)i, (void *)i);
         }
-        if ((long)ret_data != i) {
-            continue;
-        }
-        cr_event_notify(&__alarm, (cr_eid_t)i, (void *)i);
+        printf("done\n");
+    } else {
+        printf("overtime!\n");
+        printf("CR_EVENT_GROUP_SIZE: %d, CR_TOP_TASK_NUM: %d\n",
+            CR_EVENT_GROUP_SIZE, CR_TOP_TASK_NUM);
+        printf("count1: %d, count2: %d, count3: %d\n", count1, count2, count3);
+        exit(0);
     }
-    printf("done\n");
-    signal(SIGALRM, __sig_exit);
-    alarm(5);
 }
 
 
 int main(void)
 {
+    struct sigaction act = { 0 };
     cr_init();
 
-    signal(SIGALRM, __sig_handler);
-    alarm(5);
-    printf("creating tasks\n");
+    act.sa_handler = __sig_handler;
+    act.sa_flags = 0;
+    sigemptyset(&act.sa_mask);
+    printf("wait for 2 seconds...");
+    alarm(0);
+    sigaction(SIGALRM, &act, NULL);
+
+    alarm(2);
     for (long i = 0; i < CR_TOP_TASK_NUM; i++) {
         cr_task_create(__top_entry, (void *)i);
         for (long j = 0; j < CR_EVENT_GROUP_SIZE; j++) {
-            long param = (i + 1) * CR_EVENT_GROUP_SIZE * 2 + j;
+            long param = (i + 1) * CR_EVENT_GROUP_SIZE + j;
+            param *= 2;
             cr_task_create(__sec_entry, (void *)param);
             cr_task_create(__trd_entry, (void *)(param + 1));
         }
     }
 
-    printf("wait for 5 seconds...");
-
     cr_wait_event_loop();
+    printf("CR_EVENT_GROUP_SIZE: %d, CR_TOP_TASK_NUM: %d\n",
+           CR_EVENT_GROUP_SIZE, CR_TOP_TASK_NUM);
+    printf("count1: %d, count2: %d, count3: %d\n", count1, count2, count3);
     return 0;
 }

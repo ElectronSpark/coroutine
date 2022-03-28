@@ -5,12 +5,11 @@
 #include <cr_types.h>
 
 
-#define cr_chan_count(ch)       ((ch)->count)
-#define cr_chan_sender(ch)      ((ch)->sender)
+#define cr_chan_count(__ch)         ((__ch)->count)
+#define cr_chan_sender(__ch)        ((__ch)->sender)
+#define cr_chan_receiver(__ch)      ((__ch)->receiver)
 
-#define cr_is_chan_open(ch)     ((ch)->flag.opened)
-#define cr_is_chan_occupied(ch) (!!cr_chan_sender(ch))
-
+#define cr_is_chan_open(__ch)       ((__ch)->flag.opened)
 
 /* 管道的开关 */
 int cr_channel_init(cr_channel_t *ch, unsigned int buffer_size);

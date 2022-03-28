@@ -24,7 +24,7 @@ extern cr_gct_t cr_global_control_table;
 
 /* 协程控制块状态设置与清除 */
 #define __cr_task_change_flag(_task, _flag, _value)    \
-    do { (task)->flag._flag = _value; } while (0)
+    do { (_task)->flag._flag = _value; } while (0)
 
 #define cr_task_set_main(task)      __cr_task_change_flag(task, main, 1)
 #define cr_task_set_alive(task)     __cr_task_change_flag(task, alive, 1)

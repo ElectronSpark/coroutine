@@ -65,17 +65,18 @@ typedef struct cr_semaphore_struct  cr_sem_t;
 
 /* 通道 */
 struct cr_channel_struct {
-    cr_waitable_t   receivers[1];
+    cr_waitable_t   waitable[1];
     cr_task_t       *sender;
+    cr_task_t       *receiver;
 
     struct {
         int     opened: 1;
     }   flag;
     
-    unsigned int buffer_size;   /* 缓冲区能容纳的项个数 */
-    unsigned int pos;   /* 缓冲区的当前位置指针 */
-    unsigned int count; /* 缓冲区当前所存放的项个数 */
-    void *data[0];
+    unsigned int    buffer_size;    /* 缓冲区能容纳的项个数 */
+    unsigned int    pos;    /* 缓冲区的当前位置指针 */
+    unsigned int    count;  /* 缓冲区当前所存放的项个数 */
+    void            *data[0];
 };
 typedef struct cr_channel_struct    cr_channel_t;
 
