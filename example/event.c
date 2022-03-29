@@ -1,9 +1,10 @@
-#include <coroutine.h>
-#include <cr_event.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
+
+#include <coroutine.h>
+#include <cr_event.h>
 
 
 #define CR_EVENT_GROUP_SIZE     16

@@ -197,6 +197,9 @@ int cr_channel_send(cr_channel_t *ch, void *data)
     /* 尝试清空缓冲 */
     while (__ch_buffer_full(ch)) {
         cr_channel_flush(ch);
+        if (!__ch_is_opened_valid(ch)) {
+            return -1;
+        }
     }
 
     return __ch_buffer_push(ch, data);
