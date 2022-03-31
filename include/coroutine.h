@@ -19,6 +19,7 @@
 
 int cr_init(void);
 int cr_wait_event_loop(void);
+int cr_set_idle_handler(cr_function_t handler);
 
 
 #endif /* __ES_COROUTINE_H__ */

@@ -40,8 +40,10 @@ typedef struct cr_task_struct       cr_task_t;
 struct cr_global_control_table_struct {
     cr_waitable_t       ready_queue[1];
     cr_waitable_t       cancel_queue[1];
+    cr_function_t       idle_handler;
     int     task_count;
     int     cancel_count;
+    int     sched_count;
     struct {
         int     valid: 1;
     } flag;
