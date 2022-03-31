@@ -4,13 +4,6 @@
 #include <cpu_specific.h>
 
 
-#define CR_TASK_STACK_SIZE          (1UL << 14)
-#define CR_DEFAULT_POOL_SIZE        CR_POOL_NODE_SIZE_MAX
-#define CR_POOL_TCB_WATERMARK       (CR_DEFAULT_POOL_SIZE / sizeof(cr_task_t))
-#define CR_POOL_STACK_WATERMARK     (CR_POOL_NODE_SIZE_MAX / CR_TASK_STACK_SIZE)
-#define CR_POOL_WAITABLE_WATERMARK  (CR_DEFAULT_POOL_SIZE / sizeof(cr_waitable_t))
-
-
 static CR_POOL_DECLARE(__task_stack_pool, CR_TASK_STACK_SIZE,   \
                        CR_DEFAULT_POOL_SIZE, CR_POOL_STACK_WATERMARK);
 static CR_POOL_DECLARE(__task_tcb_pool, sizeof(cr_task_t),  \
@@ -19,7 +12,7 @@ static CR_POOL_DECLARE(__task_tcb_pool, sizeof(cr_task_t),  \
 
 /* 初始化协程控制块 */
 static void __tcb_init(cr_task_t *task, cr_function_t entry, void *arg,
-                      void *stack_base, size_t stack_size)
+                       void *stack_base, size_t stack_size)
 {
     INIT_LIST_HEAD(task->list_head);
     task->cur_queue = NULL;

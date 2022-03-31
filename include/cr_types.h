@@ -125,11 +125,10 @@ typedef unsigned long   cr_eid_t;
 typedef struct cr_event_control_struct  cr_event_t;
 struct cr_event_node_struct {
     struct rb_node  rb_node[1];
+    cr_waitable_t   waitable[1];
     cr_eid_t        eid;
-    cr_task_t       *task;
     cr_event_t      *event;
     void            *data;
-    void            *ret_data;
 };
 typedef struct cr_event_node_struct cr_event_node_t;
 

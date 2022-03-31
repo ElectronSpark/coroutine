@@ -10,6 +10,13 @@
 #include <cr_event.h>
 
 
+#define CR_TASK_STACK_SIZE          (1UL << 14)
+#define CR_DEFAULT_POOL_SIZE        CR_POOL_NODE_SIZE_MAX
+#define CR_POOL_TCB_WATERMARK       (CR_DEFAULT_POOL_SIZE / sizeof(cr_task_t))
+#define CR_POOL_STACK_WATERMARK     (CR_POOL_NODE_SIZE_MAX / CR_TASK_STACK_SIZE)
+#define CR_POOL_EVENT_NODE_WATERMARK    (CR_DEFAULT_POOL_SIZE / sizeof(cr_event_node_t))
+
+
 int cr_init(void);
 int cr_wait_event_loop(void);
 
