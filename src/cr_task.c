@@ -212,7 +212,7 @@ int cr_task_cancel(cr_task_t *task)
 void cr_task_exit(void)
 {
     cr_task_cancel(cr_self());
-    cr_yield();
+    cr_sched();
 }
 
 /* 恢复某个协程的上下文 */
@@ -226,7 +226,7 @@ int cr_resume(cr_task_t *task)
 }
 
 /* 主动让出 CPU，切换回主协程 */
-int cr_yield(void)
+int cr_sched(void)
 {
     if (!cr_task_is_main(cr_self())) {
         return __cr_task_switch_to(cr_main());

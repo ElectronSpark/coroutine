@@ -114,7 +114,7 @@ int cr_channel_close(cr_channel_t *ch)
 
     __ch_flag_unset_opened(ch);
     ret = cr_waitable_notify_all(ch->waitable);
-    cr_yield();
+    cr_sched();
     return ret;
 }
 

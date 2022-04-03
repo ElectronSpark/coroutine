@@ -44,7 +44,7 @@ int cr_task_cancel(cr_task_t *task);
 void cr_task_exit(void);
 
 int cr_resume(cr_task_t *task);
-int cr_yield(void);
+int cr_sched(void);
 
 int cr_suspend(cr_task_t *task);
 int cr_wakeup(cr_task_t *task);

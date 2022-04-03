@@ -189,7 +189,7 @@ int cr_await(cr_waitable_t *waitable)
 
     if (__cr_await_prepare(waitable, task) == 0) {
         cr_waitable_push_tail(waitable, task);
-        return cr_yield();
+        return cr_sched();
     }
     
     return -1;

@@ -104,7 +104,7 @@ static inline int __do_notify_all(cr_event_t *event, void *data) {
             ret = -1;
         }
     }
-    return cr_yield() == 0 ? ret : -1;
+    return cr_sched() == 0 ? ret : -1;
 }
 
 /* 在将事件节点插入事件控制块前初始化该节点 */
@@ -212,7 +212,7 @@ int cr_event_remove(cr_event_node_t *enode)
     if (__do_notify(event, enode) != 0) {
         return -1;
     }
-    ret = cr_yield();
+    ret = cr_sched();
     __event_node_free(enode);
     return ret;
 }
