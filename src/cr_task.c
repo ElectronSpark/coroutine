@@ -20,6 +20,7 @@ static void __tcb_init(cr_task_t *task, cr_function_t entry, void *arg,
     task->stack_size = stack_size;
     task->arg = arg;
     task->entry = entry;
+    task->cr_errno = -CR_ERR_OK;
 
     cr_task_unset_main(task);
     cr_task_unset_alive(task);
@@ -79,41 +80,41 @@ static int __cr_task_switch_to(cr_task_t *task)
     last = cr_switch_to(cr_self()->regs, task->regs, cr_self());
     cr_set_current_task(self);  /* 当前协程的协程控制块保存在当前栈的上下文中 */
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 在全局协程表中注册一个协程 */
 static int __cr_task_register(cr_task_t *task)
 {
     if (!task || !task->stack_base) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (cr_task_is_main(task)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     cr_task_set_alive(task);
     cr_global()->task_count += 1;
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 在全局协程表中注销一个协程 */
 static int __cr_task_unregister(cr_task_t *task)
 {
     if (!task || !task->stack_base) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (cr_task_is_main(task)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     cr_task_unset_alive(task);
     cr_global()->task_count -= 1;
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 
@@ -121,7 +122,7 @@ static int __cr_task_unregister(cr_task_t *task)
 int cr_init_main(cr_task_t *task)
 {
     if (!task) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     __tcb_init(task, NULL, NULL, NULL, 0);
@@ -129,16 +130,16 @@ int cr_init_main(cr_task_t *task)
     cr_task_set_alive(task);
     cr_task_set_ready(task);
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 初始化一个一个协程 */
 int cr_task_init(cr_task_t *task, cr_function_t entry, void *arg)
 {
-    int ret = -1;
+    int ret = CR_ERR_OK;
 
     if (!task || !entry || !task->stack_base) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     __tcb_init(task, entry, arg, task->stack_base, task->stack_size);
@@ -147,10 +148,10 @@ int cr_task_init(cr_task_t *task, cr_function_t entry, void *arg)
                     (void *)task);
 
     if (__cr_task_register(task) != 0) {
-        return -1;
+        return -CR_ERR_FAIL;
     }
 
-    return cr_wakeup(task);
+    return cr_wakeup(task, CR_ERR_OK);
 }
 
 /* 创建一个新的协程，并返回协程控制块 */
@@ -179,28 +180,29 @@ cr_task_t *cr_task_create(cr_function_t entry, void *arg)
 int cr_task_destroy(cr_task_t *task)
 {
     if (!task || !task->stack_base) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (cr_task_is_alive(task) || cr_task_is_main(task)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     __tcb_free(task);
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 取消某个协程，让其不出于存活状态 */
 int cr_task_cancel(cr_task_t *task)
 {
+    int ret = CR_ERR_OK;
     /* 在挂起协程的过程中会检查给定的协程是否合法，然后将其从就绪队列中移除 */
-    if (cr_suspend(task) != 0) {
-        return -1;
+    if ((ret = cr_suspend(task)) != 0) {
+        return ret;
     }
 
-    if (__cr_task_unregister(task) != 0) {
-        return -1;
+    if ((ret = __cr_task_unregister(task)) != 0) {
+        return ret;
     }
 
     cr_global()->cancel_count += 1;
@@ -218,8 +220,8 @@ void cr_task_exit(void)
 /* 恢复某个协程的上下文 */
 int cr_resume(cr_task_t *task)
 {
-    if (cr_wakeup(task) != 0) {
-        return -1;
+    if (!cr_task_is_ready(task)) {
+        return -CR_ERR_INVAL;
     }
 
     return __cr_task_switch_to(task);
@@ -228,54 +230,63 @@ int cr_resume(cr_task_t *task)
 /* 主动让出 CPU，切换回主协程 */
 int cr_sched(void)
 {
+    int ret = CR_ERR_OK;
     if (!cr_task_is_main(cr_self())) {
-        return __cr_task_switch_to(cr_main());
+        ret = __cr_task_switch_to(cr_main());
+        if (ret == CR_ERR_OK) {
+            ret = cr_self()->cr_errno;
+        }
+        return ret;
     }
-    return -1;
+    return -CR_ERR_INVAL;
 }
 
 /* 将一个协程挂起，移出就绪队列（不会发生协程上下文切换！）。 */
 int cr_suspend(cr_task_t *task)
 {
+    int ret = CR_ERR_OK;
     if (!task || !task->stack_base) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (!cr_task_is_alive(task) || cr_task_is_main(task)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (!cr_task_is_ready(task)) {
-        return 0;   /* 对于已经出于挂起状态的协程，什么也不做 */
+        return CR_ERR_OK;   /* 对于已经出于挂起状态的协程，什么也不做 */
     }
 
-    if (cr_waitqueue_remove(cr_global()->ready_queue, task) != 0) {
-        return -1;
+    if ((ret = cr_waitqueue_remove(cr_global()->ready_queue, task)) != 0) {
+        return ret;
     }
 
     cr_task_unset_ready(task);
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 唤醒一个协程，并将其加入就绪队列 */
-int cr_wakeup(cr_task_t *task)
+int cr_wakeup(cr_task_t *task, int err)
 {
+    int ret = CR_ERR_OK;
+
     if (!task || !task->stack_base) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (!cr_task_is_alive(task) || cr_task_is_main(task)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (cr_task_is_ready(task)) {
-        return 0;   /* 对于处于就绪状态的协程，什么也不做 */
+        return CR_ERR_OK;   /* 对于处于就绪状态的协程，什么也不做 */
     }
 
-    if (cr_waitqueue_push_tail(cr_global()->ready_queue, task) != 0) {
-        return -1;
+    if ((ret = cr_waitqueue_push_tail(cr_global()->ready_queue, task)) != 0) {
+        return ret;
     }
     
+    task->cr_errno = err;
     cr_task_set_ready(task);
-    return 0;
+    return CR_ERR_OK;
 }

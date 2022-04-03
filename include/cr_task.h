@@ -47,7 +47,7 @@ int cr_resume(cr_task_t *task);
 int cr_sched(void);
 
 int cr_suspend(cr_task_t *task);
-int cr_wakeup(cr_task_t *task);
+int cr_wakeup(cr_task_t *task, int err);
 
 
 #endif /* __CR_TASK_H__ */

@@ -8,6 +8,7 @@
 #include <cr_channel.h>
 #include <cr_semaphore.h>
 #include <cr_event.h>
+#include <cr_errno.h>
 
 
 #define CR_TASK_STACK_SIZE          (1UL << 14)
