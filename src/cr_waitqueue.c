@@ -144,15 +144,6 @@ int cr_waitqueue_notify(cr_waitqueue_t *waitqueue)
     return cr_wakeup(task);
 }
 
-/* 唤醒给定的一个协程 */
-int cr_waitqueue_notify_one(cr_waitqueue_t *waitqueue, cr_task_t *task)
-{
-    if (cr_waitqueue_remove(waitqueue, task) != 0) {
-        return -1;
-    }
-    return cr_wakeup(task);
-}
-
 /* 唤醒位于等待队列的所有协程 */
 int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue)
 {

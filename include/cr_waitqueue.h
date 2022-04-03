@@ -31,7 +31,6 @@ cr_task_t *cr_waitqueue_pop(cr_waitqueue_t *waitqueue);
 cr_task_t *cr_waitqueue_pop_tail(cr_waitqueue_t *waitqueue);
 
 int cr_waitqueue_notify(cr_waitqueue_t *waitqueue);
-int cr_waitqueue_notify_one(cr_waitqueue_t *waitqueue, cr_task_t *task);
 int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue);
 int cr_await(cr_waitqueue_t *waitqueue);
 
