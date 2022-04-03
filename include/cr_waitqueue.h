@@ -1,4 +1,4 @@
-/* 可等待实体的 API 实现 */
+/* 等待队列的 API 实现 */
 #ifndef __CR_WAITQUEUE_H__
 #define __CR_WAITQUEUE_H__
 
@@ -6,16 +6,16 @@
 #include <list.h>
 
 
-/* 静态初始化可等待实体 */
+/* 静态初始化等待队列 */
 #define CR_WAITQUEUE_INIT(name)  \
     { LIST_HEAD_INIT((name).wait_queue[0]) }
 
-/* 静态声明并初始化一个可等待实体 */
+/* 静态声明并初始化一个等待队列 */
 #define CR_WAITQUEUE_DECLARE(name)   \
     cr_waitqueue_t name = CR_WAITQUEUE_INIT(name)
 
 
-/* 判断是否有协程在等待一个可等待实体 */
+/* 判断是否有协程位于等待队列 */
 #define cr_is_waitqueue_busy(wtb)  (!list_empty((wtb)->wait_queue))
 #define cr_is_task_in_waitqueue(task, waitqueue)  \
     ((task)->cur_queue == (waitqueue))

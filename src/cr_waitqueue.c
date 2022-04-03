@@ -2,7 +2,7 @@
 #include <cr_waitqueue.h>
 
 
-/* 初始化一个可等待实体 */
+/* 初始化一个等待队列 */
 int cr_waitqueue_init(cr_waitqueue_t *waitqueue)
 {
     if (!waitqueue) {
@@ -26,7 +26,7 @@ static int __cr_waitqueue_push_prepare(cr_waitqueue_t *waitqueue, cr_task_t *tas
     return 0;
 }
 
-/* 让协程加入等待实体的等待队列队首 */
+/* 让协程加入等待队列队首 */
 int cr_waitqueue_push(cr_waitqueue_t *waitqueue, cr_task_t *task)
 {
     if (__cr_waitqueue_push_prepare(waitqueue, task) != 0) {
@@ -37,7 +37,7 @@ int cr_waitqueue_push(cr_waitqueue_t *waitqueue, cr_task_t *task)
     return 0;
 }
 
-/* 让协程加入等待实体的等待队列队尾 */
+/* 让协程加入等待队列队尾 */
 int cr_waitqueue_push_tail(cr_waitqueue_t *waitqueue, cr_task_t *task)
 {
     if (__cr_waitqueue_push_prepare(waitqueue, task) != 0) {
@@ -106,7 +106,7 @@ cr_task_t *cr_waitqueue_get_tail(cr_waitqueue_t *waitqueue)
     return ret;
 }
 
-/* 将一个协程从可等待实体中移除 */
+/* 将一个协程从等待队列中移除 */
 int cr_waitqueue_remove(cr_waitqueue_t *waitqueue, cr_task_t *task)
 {
     if (__cr_waitqueue_move_prepare(waitqueue, task) != 0) {
@@ -137,7 +137,7 @@ cr_task_t *cr_waitqueue_pop_tail(cr_waitqueue_t *waitqueue)
     return ret;
 }
 
-/* 唤醒等待可等待实体的一个协程 */
+/* 唤醒等待队列队头的一个协程 */
 int cr_waitqueue_notify(cr_waitqueue_t *waitqueue)
 {
     cr_task_t *task = cr_waitqueue_pop(waitqueue);
@@ -153,7 +153,7 @@ int cr_waitqueue_notify_one(cr_waitqueue_t *waitqueue, cr_task_t *task)
     return cr_wakeup(task);
 }
 
-/* 唤醒等待可等待实体的所有协程 */
+/* 唤醒位于等待队列的所有协程 */
 int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue)
 {
     cr_task_t *task = NULL;
@@ -182,7 +182,7 @@ static int __cr_await_prepare(cr_waitqueue_t *waitqueue, cr_task_t *task)
     return cr_suspend(task);
 }
 
-/* 让当前协程加入一个可等待实体的等待队列并挂起 */
+/* 让当前协程加入等待队列并挂起 */
 int cr_await(cr_waitqueue_t *waitqueue)
 {
     cr_task_t *task = cr_self();

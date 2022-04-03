@@ -12,7 +12,7 @@
 /* 协程入口函数原型 */
 typedef void (*cr_function_t)(void *param);
 
-/* 可等待实体，作为协程的等待队列，协程间协作的基础 */
+/* 等待队列，协程间协作的基础 */
 struct cr_waitqueue_struct {
     struct list_head    wait_queue[1];
 };
