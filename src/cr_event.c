@@ -75,36 +75,36 @@ static inline void __do_rb_delete(cr_event_t *event, cr_event_node_t *node)
 static inline int __do_await(cr_event_t *event, cr_event_node_t *node)
 {
     if (!cr_is_waitqueue_empty(node->waitqueue)) {
-        return -1;
+        return -CR_ERR_INVAL;
     } else {
         return cr_await(node->waitqueue);
     }
 }
 
 /* 唤醒一个事件节点上的协程，并向被唤醒协程传递给定数据 */
-static inline int __do_notify(cr_event_t *event, cr_event_node_t *node)
+static inline int __do_notify(cr_event_t *event, cr_event_node_t *node, int err)
 {
     if (cr_is_waitqueue_empty(node->waitqueue)) {
-        return 0;
+        return CR_ERR_OK;
     } else {
-        return cr_waitqueue_notify(node->waitqueue);
+        return cr_waitqueue_notify(node->waitqueue, err);
     }
 }
 
 /* 唤醒等待一个事件的所有任务，并向所有被唤醒的协程传递相同的给定数据 */
-static inline int __do_notify_all(cr_event_t *event, void *data) {
+static inline int __do_notify_all(cr_event_t *event, void *data, int err) {
     cr_event_node_t *pos = NULL;
     cr_event_node_t *n = NULL;
     struct rb_root *root = event->nodes;
-    int ret = 0;
+    int ret = CR_ERR_OK;
 
     rbtree_postorder_for_each_entry_safe(pos, n, root, rb_node[0]) {
         pos->data = data;
-        if (__do_notify(event, pos) != 0) {
-            ret = -1;
+        if (__do_notify(event, pos, err) != 0) {
+            ret = -CR_ERR_FAIL;
         }
     }
-    return cr_sched() == 0 ? ret : -1;
+    return ret;
 }
 
 /* 在将事件节点插入事件控制块前初始化该节点 */
@@ -122,30 +122,30 @@ static inline int __init_event_node(cr_event_node_t *node, cr_event_t *event,
 /* 初始化事件控制块 */
 int cr_event_init(cr_event_t *event)
 {
+    int ret = CR_ERR_OK;
     if (!event) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
-    if (cr_waitqueue_init(event->waitqueue) != 0) {
-        return -1;
+    if ((ret = cr_waitqueue_init(event->waitqueue)) != 0) {
+        return ret;
     }
     event->count = 0;
     event->nodes[0] = RB_ROOT;
     event->flag.active = 1;
     
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 关闭一个事件 */
 int cr_event_destroy(cr_event_t *event)
 {
     if (!__check_event_valid(event)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     event->flag.active = 0;
-    while (__do_notify_all(event, NULL) != 0);
-    return 0;
+    return __do_notify_all(event, NULL, -CR_ERR_CLOSE);
 }
 
 /* 将事件节点插入插入事件控制块的红黑树中 */
@@ -202,66 +202,68 @@ cr_event_node_t *cr_event_find(cr_event_t *event, cr_eid_t eid)
 int cr_event_remove(cr_event_node_t *enode)
 {
     cr_event_t *event = __get_node_event(enode);
-    int ret = -1;
+    int ret = CR_ERR_OK;
     if (!event) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     __do_rb_delete(event, enode);
     enode->event = NULL;
-    if (__do_notify(event, enode) != 0) {
-        return -1;
+    if ((ret = __do_notify(event, enode, -CR_ERR_INTR)) != 0) {
+        return ret;
     }
-    ret = cr_sched();
     __event_node_free(enode);
-    return ret;
+    return CR_ERR_OK;
 }
 
 /* 令当前协程等待一个事件 */
-int cr_event_wait(cr_event_node_t *enode, void *data)
+int cr_event_wait(cr_event_node_t *enode, void **ret_data)
 {
     cr_event_t *event = __get_node_event(enode);
-    int ret = -1;
+    int ret = CR_ERR_OK;
     if (!event) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
     if (!cr_is_waitqueue_empty(enode->waitqueue)) {
-        return -1;
+        return -CR_ERR_FAIL;
     }
     
-    enode->data = data;
     if ((ret = __do_await(event, enode)) != 0) {
         return ret;
     }
-    return __check_enode_valid(enode) ? ret : -1;
+    if (ret_data) {
+        *ret_data = enode->data;
+    }
+    return CR_ERR_OK;
 }
 
 /* 获得等待事件的协程传递给事件处理函数的数据 */
-int cr_event_get_data(cr_event_node_t *enode, void **data)
+int cr_event_get_data(cr_event_node_t *enode, void **ret_data)
 {
-    if (!enode || !data) {
-        return -1;
+    if (!enode || !ret_data) {
+        return -CR_ERR_INVAL;
     }
-    *data = enode->data;
-    return 0;
+    *ret_data = enode->data;
+    return CR_ERR_OK;
 }
 
 /* 唤醒一个等待事件的协程，并将给定数据传给该协程 */
 int cr_event_notify(cr_event_node_t *enode, void *data)
 {
+    int ret = CR_ERR_OK;
     cr_event_t *event = __get_node_event(enode);
     if (!event) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
-    enode->data;
-    return __do_notify(event, enode);
+    enode->data = data;
+    return __do_notify(event, enode, CR_ERR_OK);
 }
 
 /* 唤醒等待事件的所有协程，并将给定数据传递给它们 */
 int cr_event_notify_all(cr_event_t *event, void *data)
 {
     if (!__check_event_valid(event)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
-    return __do_notify_all(event, data);
+    return __do_notify_all(event, data, CR_ERR_OK);
 }

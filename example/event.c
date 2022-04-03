@@ -6,7 +6,8 @@
 #include <coroutine.h>
 #include <cr_event.h>
 
-#define stub()  printf("%s()-%d\n", __func__, __LINE__)
+static inline void __stub(void) {}
+#define stub()  printf("%s()-%d\n", __func__, __LINE__); __stub()
 // #define stub()
 
 #define CR_EVENT_GROUP_SIZE     16
@@ -31,12 +32,12 @@ static void __trd_entry(void *param)
         stub();
         return;
     }
-    if (cr_event_wait(enode, param) != 0) {
+    if (cr_event_wait(enode, &ret_data) != 0) {
         cr_event_remove(enode);
         stub();
         return;
     }
-    if (cr_event_get_data(enode, &ret_data) == 0 && ret_data == param) {
+    if (ret_data == param) {
         count3 += 1;
     }
     cr_event_remove(enode);
@@ -52,12 +53,12 @@ static void __sec_entry(void *param)
         stub();
         return;
     }
-    if (cr_event_wait(enode, param) != 0) {
+    if (cr_event_wait(enode, &ret_data) != 0) {
         cr_event_remove(enode);
         stub();
         return;
     }
-    if (cr_event_get_data(enode, &ret_data) != 0 || ret_data != param) {
+    if (ret_data != param) {
         cr_event_remove(enode);
         stub();
         return;
@@ -67,14 +68,6 @@ static void __sec_entry(void *param)
     
     eid += 1;
     if ((enode = cr_event_find(&__sevent, eid)) == NULL) {
-        stub();
-        return;
-    }
-    if (cr_event_get_data(enode, &ret_data) != 0) {
-        stub();
-        return;
-    }
-    if ((cr_eid_t)ret_data != eid) {
         stub();
         return;
     }
@@ -93,12 +86,12 @@ static void __top_entry(void *param)
         stub();
         return;
     }
-    if (cr_event_wait(enode, param) != 0) {
+    if (cr_event_wait(enode, &ret_data) != 0) {
         cr_event_remove(enode);
         stub();
         return;
     }
-    if (cr_event_get_data(enode, &ret_data) != 0 && ret_data != param) {
+    if (ret_data != param) {
         cr_event_remove(enode);
         stub();
         return;
@@ -110,14 +103,6 @@ static void __top_entry(void *param)
         cr_eid_t j = (eid + 1) * CR_EVENT_GROUP_SIZE + i;
         j *= 2;
         if ((enode = cr_event_find(&__sevent, j)) == NULL) {
-            stub();
-            continue;
-        }
-        if (cr_event_get_data(enode, &ret_data) != 0) {
-            stub();
-            continue;
-        }
-        if ((cr_eid_t)ret_data != j) {
             stub();
             continue;
         }
@@ -146,14 +131,6 @@ static void __sig_handler(int param)
         printf("alarm\n");
         for (long i = 0; i < CR_TOP_TASK_NUM; i++) {
             if ((enode = cr_event_find(&__alarm, (cr_eid_t)i)) == NULL) {
-                stub();
-                continue;
-            }
-            if (cr_event_get_data(enode, &ret_data) != 0) {
-                stub();
-                continue;
-            }
-            if ((long)ret_data != i) {
                 stub();
                 continue;
             }

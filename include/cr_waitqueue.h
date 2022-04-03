@@ -30,8 +30,8 @@ int cr_waitqueue_remove(cr_waitqueue_t *waitqueue, cr_task_t *task);
 cr_task_t *cr_waitqueue_pop(cr_waitqueue_t *waitqueue);
 cr_task_t *cr_waitqueue_pop_tail(cr_waitqueue_t *waitqueue);
 
-int cr_waitqueue_notify(cr_waitqueue_t *waitqueue);
-int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue);
+int cr_waitqueue_notify(cr_waitqueue_t *waitqueue, int ret);
+int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue, int ret);
 int cr_await(cr_waitqueue_t *waitqueue);
 
 #endif /* __CR_WAITQUEUE_H__ */

@@ -38,27 +38,27 @@ static inline int __ch_is_opened_valid(cr_channel_t *ch)
 static inline int __ch_buffer_pop(cr_channel_t *ch, void **buffer)
 {
     if (__ch_buffer_empty(ch)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     *buffer = ch->data[__ch_pos_current(ch)];
     ch->pos = __ch_pos_next(ch);
     ch->count -= 1;
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 将一项数据加入到管道中 */
 static inline int __ch_buffer_push(cr_channel_t *ch, void *data)
 {
     if (__ch_buffer_full(ch)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     ch->data[__ch_pos_tail(ch)] = data;
     ch->count += 1;
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 尝试令当前协程作为一个管道的发送方 */
@@ -66,9 +66,9 @@ static inline int __ch_claim_sender(cr_channel_t *ch)
 {
     if (ch->sender == NULL) {
         ch->sender = cr_self();
-        return 0;
+        return CR_ERR_OK;
     }
-    return (ch->sender == cr_self()) ? 0 : -1;
+    return (ch->sender == cr_self()) ? CR_ERR_OK : -CR_ERR_INVAL;
 }
 
 /* 尝试令当前协程作为一个管道的发送方 */
@@ -76,21 +76,22 @@ static inline int __ch_claim_receiver(cr_channel_t *ch)
 {
     if (ch->receiver == NULL) {
         ch->receiver = cr_self();
-        return 0;
+        return CR_ERR_OK;
     }
-    return (ch->receiver == cr_self()) ? 0 : -1;
+    return (ch->receiver == cr_self()) ? CR_ERR_OK : -CR_ERR_INVAL;
 }
 
 
 /* 初始化管道。缓存的大小会被调整到大于等于 1 */
 int cr_channel_init(cr_channel_t *ch, unsigned int buffer_size)
 {
+    int ret = CR_ERR_OK;
     if (!ch) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
-    if (cr_waitqueue_init(ch->waitqueue) != 0) {
-        return -1;
+    if ((ret = cr_waitqueue_init(ch->waitqueue)) != 0) {
+        return ret;
     }
 
     ch->receiver = NULL;
@@ -101,21 +102,18 @@ int cr_channel_init(cr_channel_t *ch, unsigned int buffer_size)
     memset(ch->data, 0, sizeof(void*) * buffer_size);
     __ch_flag_set_opened(ch);
     
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 关闭一个管道 */
 int cr_channel_close(cr_channel_t *ch)
 {
-    int ret = -1;
     if (!ch) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     __ch_flag_unset_opened(ch);
-    ret = cr_waitqueue_notify_all(ch->waitqueue);
-    cr_sched();
-    return ret;
+    return cr_waitqueue_notify_all(ch->waitqueue, -CR_ERR_CLOSE);
 }
 
 /* 创建一个给定大小缓存的管道 */
@@ -139,9 +137,9 @@ cr_channel_t *cr_channel_create(unsigned int buffer_size)
 /* 销毁一个管道，并释放这个管道所占的空间 */
 int cr_channel_destroy(cr_channel_t *ch)
 {
-    int ret = -1;
+    int ret = CR_ERR_OK;
     if (!ch) {
-        return 0;
+        return CR_ERR_OK;
     }
 
     ret = cr_channel_close(ch);
@@ -153,52 +151,53 @@ int cr_channel_destroy(cr_channel_t *ch)
 int cr_channel_recv(cr_channel_t *ch, void **data)
 {
     void *tmp_data = NULL;
+    int ret = CR_ERR_OK;
 
     if (!data || !__ch_is_opened_valid(ch)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
-    if (__ch_claim_receiver(ch) != 0) {
-        return -1;
+    if ((ret = __ch_claim_receiver(ch)) != 0) {
+        return ret;
     }
 
     if (__ch_buffer_empty(ch)) {
-        cr_await(ch->waitqueue);
-        if (!__ch_is_opened_valid(ch)) {
-            return -1;
+        ret = cr_await(ch->waitqueue);
+        if (ret != 0) {
+            return ret;
         }
     }
-    if (__ch_buffer_pop(ch, &tmp_data) != 0) {
-        return -1;
+    if ((ret = __ch_buffer_pop(ch, &tmp_data)) != 0) {
+        return ret;
     }
     *data = tmp_data;
 
-    if (!cr_is_waitqueue_empty(ch->waitqueue)) {
-        cr_waitqueue_notify(ch->waitqueue);
+    if (__ch_buffer_empty(ch) > 0) {
+        cr_waitqueue_notify(ch->waitqueue, CR_ERR_OK);
     }
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 向管道发送一项数据 */
 int cr_channel_send(cr_channel_t *ch, void *data)
 {
-    int ret = -1;
+    int ret = CR_ERR_OK;
     void *tmp_data = NULL;
 
     if (!__ch_is_opened_valid(ch)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
-    if (__ch_claim_sender(ch) != 0) {
-        return -1;
+    if ((ret = __ch_claim_sender(ch)) != 0) {
+        return ret;
     }
 
     /* 尝试清空缓冲 */
     while (__ch_buffer_full(ch)) {
-        cr_channel_flush(ch);
-        if (!__ch_is_opened_valid(ch)) {
-            return -1;
+        ret = cr_channel_flush(ch);
+        if (ret != 0) {
+            return ret;
         }
     }
 
@@ -209,19 +208,20 @@ int cr_channel_send(cr_channel_t *ch, void *data)
 int cr_channel_flush(cr_channel_t *ch)
 {
     unsigned int tmp = 0;
+    int ret = CR_ERR_OK;
 
     if (!__ch_is_opened_valid(ch)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
-    if (__ch_claim_sender(ch) != 0) {
-        return -1;
+    if ((ret = __ch_claim_sender(ch)) != 0) {
+        return ret;
     }
 
     tmp = cr_chan_count(ch);
     if (tmp > 0) {
         for (unsigned int i = 0; i < tmp; i++) {
-            if (cr_waitqueue_notify(ch->waitqueue) != 0) {
+            if (cr_waitqueue_notify(ch->waitqueue, CR_ERR_OK) != 0) {
                 break;
             }
         }

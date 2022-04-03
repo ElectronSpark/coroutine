@@ -28,76 +28,73 @@
 /* 初始化一个信号量 */
 int cr_sem_init(cr_sem_t *sem, int limit, int value)
 {
-    int ret = -1;
+    int ret = CR_ERR_OK;
 
     if (!sem || !__check_sem_attr_valid(limit, value)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if ((ret = cr_waitqueue_init(sem->waitqueue)) != 0) {
-        return -1;
+        return ret;
     }
 
     sem->limit = limit;
     sem->value = value;
     sem->flag.valid = 1;
     sem->flag.opened = 1;
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 关闭一个信号量，并唤醒正在等待该信号量的所有协程 */
 int cr_sem_close(cr_sem_t *sem)
 {
     if (!__check_sem_valid_open(sem)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     sem->flag.opened = 0;
-    return cr_waitqueue_notify_all(sem->waitqueue);
+    return cr_waitqueue_notify_all(sem->waitqueue, -CR_ERR_CLOSE);
 }
 
 /* 尝试获得一个信号量 */
 int cr_sem_wait(cr_sem_t *sem)
 {
+    int ret = CR_ERR_OK;
     if (!__check_sem_valid_open(sem)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (sem->value > 0) {
         sem->value -= 1;
-        return 0;
+        return CR_ERR_OK;
     } 
 
-    if (cr_await(sem->waitqueue) != 0) {
-        return -1;
-    }
-
-    return __check_sem_flag_open(sem) ? 0 : -1;
+    return cr_await(sem->waitqueue);
 }
 
 /* 释放一个信号量 */
 int cr_sem_post(cr_sem_t *sem)
 {
     if (!__check_sem_valid(sem)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (!cr_is_waitqueue_empty(sem->waitqueue)) {
-        return cr_waitqueue_notify(sem->waitqueue);
+        return cr_waitqueue_notify(sem->waitqueue, CR_ERR_OK);
     }
 
     if (sem->value < sem->limit) {
         sem->value += 1;
-        return 0;
+        return CR_ERR_OK;
     }
-    return -1;
+    return -CR_ERR_FAIL;
 }
 
 /* 获得信号量的值 */
 int cr_sem_getvalue(cr_sem_t *sem)
 {
     if (!__check_sem_valid(sem)) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     return sem->value;

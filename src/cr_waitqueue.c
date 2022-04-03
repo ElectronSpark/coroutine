@@ -143,14 +143,14 @@ cr_task_t *cr_waitqueue_pop_tail(cr_waitqueue_t *waitqueue)
 }
 
 /* 唤醒等待队列队头的一个协程 */
-int cr_waitqueue_notify(cr_waitqueue_t *waitqueue)
+int cr_waitqueue_notify(cr_waitqueue_t *waitqueue, int ret)
 {
     cr_task_t *task = cr_waitqueue_pop(waitqueue);
-    return cr_wakeup(task, CR_ERR_OK);
+    return cr_wakeup(task, ret);
 }
 
 /* 唤醒位于等待队列的所有协程 */
-int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue)
+int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue, int ret)
 {
     cr_task_t *task = NULL;
     if (!waitqueue) {
@@ -158,7 +158,7 @@ int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue)
     }
 
     while ((task = cr_waitqueue_pop(waitqueue)) != NULL) {
-        cr_wakeup(task, CR_ERR_OK);
+        cr_wakeup(task, ret);
     }
     if (cr_is_waitqueue_empty(waitqueue)) {
         return CR_ERR_OK;

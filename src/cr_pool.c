@@ -8,16 +8,16 @@ int cr_pool_init(cr_pool_t *pool, size_t pool_size, size_t block_size,
                  int water_mark)
 {
     if (!pool) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (water_mark < 0) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     /* 内存池节点大小限制 */
     if (pool_size < block_size || pool_size > CR_POOL_NODE_SIZE_MAX) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     pool->rb_root[0] = RB_ROOT;
@@ -34,7 +34,7 @@ int cr_pool_init(cr_pool_t *pool, size_t pool_size, size_t block_size,
     pool->node_size = pool_size;
     pool->water_mark = water_mark;
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 利用 malloc 分配新的内存池节点 */
@@ -106,13 +106,13 @@ static int __pool_add_rb(cr_pool_node_t *new_node,
         } else if (new_node->buffer < tmp_node->buffer + tmp_node->node_size) {
             rb_link = &rb_parent->rb_right;
         } else {
-            return -1;
+            return -CR_ERR_FAIL;
         }
     }
 
     rb_link_node(new_node->rb_node, rb_parent, rb_link);
     rb_insert_color(new_node->rb_node, rb_tree);
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 从红黑树中删除一个节点 */
@@ -126,22 +126,23 @@ static void __pool_del_rb(cr_pool_node_t *new_node,
 /* 将一个内存池节点加到加入内存池 */
 static int __node_attach(cr_pool_t *pool, cr_pool_node_t *node)
 {
+    int ret = CR_ERR_OK;
     struct list_head *pos = NULL;
     cr_pool_node_t *pos_entry = NULL;
 
     if (!pool || !node) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (pool->block_size != node->block_size ||
         pool->node_size != node->node_size)
     {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     /* 插入到红黑树中 */
-    if (__pool_add_rb(node, pool->rb_root) != 0) {
-        return -1;
+    if ((ret = __pool_add_rb(node, pool->rb_root)) != 0) {
+        return ret;
     }
     /* 加入到用于定位内存池节点的链表中，需要进行排序操作 */
     node->pool = pool;
@@ -162,19 +163,19 @@ static int __node_attach(cr_pool_t *pool, cr_pool_node_t *node)
     pool->block_free += node->block_free;
     pool->block_used += node->block_used;
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 将一个内存池节点从其所在内存池中剥离 */
 static int __node_detach(cr_pool_node_t *node)
 {
     if (!node) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     cr_pool_t *pool = node->pool;
     if (!pool) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (node->block_used == 0) {
@@ -191,7 +192,7 @@ static int __node_detach(cr_pool_node_t *node)
     pool->block_free -= node->block_free;
     pool->block_used -= node->block_used;
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 释放一个利用 malloc 分配的内存池节点，被操作的节点需要先 detach 掉 */
@@ -234,11 +235,11 @@ static int __push_node_block(cr_pool_node_t *node, void *ptr)
     void **block_base = NULL;
 
     if (!node || !ptr) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     if (ptr < node->buffer || ptr >= node->buffer + node->node_size) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     idx = (ptr - node->buffer) / node->block_size;
@@ -249,7 +250,7 @@ static int __push_node_block(cr_pool_node_t *node, void *ptr)
     node->block_free += 1;
     node->block_used -= 1;
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 从内存池节点中弹出一个内存池对象 */
@@ -275,15 +276,15 @@ static void *__pop_node_block(cr_pool_node_t *node)
 /* 分配一个新的内存池节点 */
 int cr_pool_node_expand(cr_pool_t *pool)
 {
-    int ret = -1;
+    int ret = CR_ERR_OK;
 
     if (!pool) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     cr_pool_node_t *new_node = __node_alloc(pool->block_size, pool->node_size);
     if (!new_node) {
-        return -1;
+        return -CR_ERR_FAIL;
     }
 
     if ((ret = __node_attach(pool, new_node)) != 0) {
@@ -291,7 +292,7 @@ int cr_pool_node_expand(cr_pool_t *pool)
         return ret;
     }
 
-    return 0;
+    return CR_ERR_OK;
 }
 
 /* 释放空闲的内存池节点，直到空闲的内存池实例的数量低于 watermark */
@@ -323,7 +324,7 @@ int cr_pool_node_free_all(cr_pool_t *pool)
     cr_pool_node_t *n = NULL;
 
     if (!pool) {
-        return -1;
+        return -CR_ERR_INVAL;
     }
 
     rbtree_postorder_for_each_entry_safe(pos, n, pool->rb_root, rb_node[0]) {
