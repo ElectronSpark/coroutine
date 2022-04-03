@@ -4,7 +4,7 @@
 
 #include <cr_types.h>
 #include <cr_task.h>
-#include <cr_waitable.h>
+#include <cr_waitqueue.h>
 #include <cr_channel.h>
 #include <cr_semaphore.h>
 #include <cr_event.h>

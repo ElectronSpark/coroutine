@@ -17,7 +17,7 @@ cr_gct_t cr_global_control_table;
 static void __cr_default_idle_handler(void *param)
 {
     /* 默认的 idle 动作为等待收到来自操作系统的信号 */
-    if (!cr_is_waitable_busy(cr_global()->ready_queue)) {
+    if (!cr_is_waitqueue_busy(cr_global()->ready_queue)) {
         pause();
     }
 }
@@ -26,8 +26,8 @@ static void __cr_default_idle_handler(void *param)
 /* 初始化整个协程框架 */
 int cr_init(void)
 {
-    cr_waitable_init(cr_global()->ready_queue);
-    cr_waitable_init(cr_global()->cancel_queue);
+    cr_waitqueue_init(cr_global()->ready_queue);
+    cr_waitqueue_init(cr_global()->cancel_queue);
     cr_global()->task_count = 0;
     cr_global()->cancel_count = 0;
     cr_global()->sched_count = 0;
@@ -51,7 +51,7 @@ static int __clean_cancel_queue(void)
     int ret = 0;
 
     while (cnt--) {
-        task = cr_waitable_pop(cr_global()->cancel_queue);
+        task = cr_waitqueue_pop(cr_global()->cancel_queue);
         if (cr_task_destroy(task) == 0) {
             cr_global()->cancel_count -= 1;
             ret += 1;
@@ -72,7 +72,7 @@ int cr_wait_event_loop(void)
     while (cr_global()->task_count > 0) {
 
         /* 从就绪队列中取出一个 */
-        task = cr_waitable_get(cr_global()->ready_queue);
+        task = cr_waitqueue_get(cr_global()->ready_queue);
         
         /* 如果当前就绪队列为空，或协程调度次数的计数达到该上限，执行 idle 处理函数 */
         if (!task || cr_global()->sched_count >= CR_SCHED_COUNT_MAX) {
@@ -85,7 +85,7 @@ int cr_wait_event_loop(void)
         cr_global()->sched_count += 1;
 
         /* 将从就绪队列中取出的协程控制块放到就绪队列的最末尾 */
-        cr_waitable_put_off(cr_global()->ready_queue, task);
+        cr_waitqueue_put_off(cr_global()->ready_queue, task);
         /* 恢复选择到的协程的执行 */
         cr_resume(task);
         /* 当待销毁的 tcb 数量超过设定的值时，清理 cancel queue */

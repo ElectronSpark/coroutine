@@ -29,7 +29,7 @@ C_FILES =	\
 	$(CURDIR)/src/cr_channel.c	\
 	$(CURDIR)/src/cr_pool.c	\
 	$(CURDIR)/src/cr_task.c	\
-	$(CURDIR)/src/cr_waitable.c	\
+	$(CURDIR)/src/cr_waitqueue.c	\
 	$(CURDIR)/src/cr_semaphore.c	\
 	$(CURDIR)/src/cr_event.c
 C_FILES	+=	\

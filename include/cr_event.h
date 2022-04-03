@@ -4,14 +4,14 @@
 
 #include <rbtree.h>
 #include <cr_types.h>
-#include <cr_waitable.h>
+#include <cr_waitqueue.h>
 
 
 /* 静态初始化一个事件控制块 */
 #define CR_EVENT_INIT(__name)    {   \
     .nodes = { RB_ROOT },   \
     .count = 0, \
-    .waitable = { CR_WAITABLE_INIT((__name).waitable[0]) }, \
+    .waitqueue = { CR_WAITQUEUE_INIT((__name).waitqueue[0]) }, \
     .flag = { .active = 1 },    \
     .last_found = NULL  \
 }

@@ -2,7 +2,7 @@
 #include <malloc.h>
 
 #include <coroutine.h>
-#include <cr_waitable.h>
+#include <cr_waitqueue.h>
 
 
 #define __ch_flag_set_opened(ch)    do { (ch)->flag.opened = 1; } while (0)
@@ -89,7 +89,7 @@ int cr_channel_init(cr_channel_t *ch, unsigned int buffer_size)
         return -1;
     }
 
-    if (cr_waitable_init(ch->waitable) != 0) {
+    if (cr_waitqueue_init(ch->waitqueue) != 0) {
         return -1;
     }
 
@@ -113,7 +113,7 @@ int cr_channel_close(cr_channel_t *ch)
     }
 
     __ch_flag_unset_opened(ch);
-    ret = cr_waitable_notify_all(ch->waitable);
+    ret = cr_waitqueue_notify_all(ch->waitqueue);
     cr_sched();
     return ret;
 }
@@ -163,7 +163,7 @@ int cr_channel_recv(cr_channel_t *ch, void **data)
     }
 
     if (__ch_buffer_empty(ch)) {
-        cr_await(ch->waitable);
+        cr_await(ch->waitqueue);
         if (!__ch_is_opened_valid(ch)) {
             return -1;
         }
@@ -173,8 +173,8 @@ int cr_channel_recv(cr_channel_t *ch, void **data)
     }
     *data = tmp_data;
 
-    if (cr_is_waitable_busy(ch->waitable)) {
-        cr_waitable_notify(ch->waitable);
+    if (cr_is_waitqueue_busy(ch->waitqueue)) {
+        cr_waitqueue_notify(ch->waitqueue);
     }
 
     return 0;
@@ -221,11 +221,11 @@ int cr_channel_flush(cr_channel_t *ch)
     tmp = cr_chan_count(ch);
     if (tmp > 0) {
         for (unsigned int i = 0; i < tmp; i++) {
-            if (cr_waitable_notify(ch->waitable) != 0) {
+            if (cr_waitqueue_notify(ch->waitqueue) != 0) {
                 break;
             }
         }
-        return cr_await(ch->waitable);
+        return cr_await(ch->waitqueue);
     }
 
     return 0;

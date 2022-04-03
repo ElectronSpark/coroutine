@@ -1,6 +1,6 @@
 #include <coroutine.h>
 #include <cr_task.h>
-#include <cr_waitable.h>
+#include <cr_waitqueue.h>
 #include <cr_semaphore.h>
 
 
@@ -34,7 +34,7 @@ int cr_sem_init(cr_sem_t *sem, int limit, int value)
         return -1;
     }
 
-    if ((ret = cr_waitable_init(sem->waitable)) != 0) {
+    if ((ret = cr_waitqueue_init(sem->waitqueue)) != 0) {
         return -1;
     }
 
@@ -53,7 +53,7 @@ int cr_sem_close(cr_sem_t *sem)
     }
 
     sem->flag.opened = 0;
-    return cr_waitable_notify_all(sem->waitable);
+    return cr_waitqueue_notify_all(sem->waitqueue);
 }
 
 /* 尝试获得一个信号量 */
@@ -68,7 +68,7 @@ int cr_sem_wait(cr_sem_t *sem)
         return 0;
     } 
 
-    if (cr_await(sem->waitable) != 0) {
+    if (cr_await(sem->waitqueue) != 0) {
         return -1;
     }
 
@@ -82,8 +82,8 @@ int cr_sem_post(cr_sem_t *sem)
         return -1;
     }
 
-    if (cr_is_waitable_busy(sem->waitable)) {
-        return cr_waitable_notify(sem->waitable);
+    if (cr_is_waitqueue_busy(sem->waitqueue)) {
+        return cr_waitqueue_notify(sem->waitqueue);
     }
 
     if (sem->value < sem->limit) {

@@ -13,15 +13,15 @@
 typedef void (*cr_function_t)(void *param);
 
 /* 可等待实体，作为协程的等待队列，协程间协作的基础 */
-struct cr_waitable_struct {
+struct cr_waitqueue_struct {
     struct list_head    wait_queue[1];
 };
-typedef struct cr_waitable_struct   cr_waitable_t;
+typedef struct cr_waitqueue_struct   cr_waitqueue_t;
 
 /* 协程控制块 */
 struct cr_task_struct {
     struct list_head    list_head[1];
-    cr_waitable_t       *cur_queue;
+    cr_waitqueue_t       *cur_queue;
     struct {
         int     alive: 1;
         int     ready: 1;
@@ -38,8 +38,8 @@ typedef struct cr_task_struct       cr_task_t;
 
 /* 全局协程表 */
 struct cr_global_control_table_struct {
-    cr_waitable_t       ready_queue[1];
-    cr_waitable_t       cancel_queue[1];
+    cr_waitqueue_t       ready_queue[1];
+    cr_waitqueue_t       cancel_queue[1];
     cr_function_t       idle_handler;
     int     task_count;
     int     cancel_count;
@@ -61,13 +61,13 @@ struct cr_semaphore_struct {
         int     valid: 1;
         int     opened: 1;
     } flag;
-    cr_waitable_t   waitable[1];
+    cr_waitqueue_t   waitqueue[1];
 };
 typedef struct cr_semaphore_struct  cr_sem_t;
 
 /* 通道 */
 struct cr_channel_struct {
-    cr_waitable_t   waitable[1];
+    cr_waitqueue_t   waitqueue[1];
     cr_task_t       *sender;
     cr_task_t       *receiver;
 
@@ -127,7 +127,7 @@ typedef unsigned long   cr_eid_t;
 typedef struct cr_event_control_struct  cr_event_t;
 struct cr_event_node_struct {
     struct rb_node  rb_node[1];
-    cr_waitable_t   waitable[1];
+    cr_waitqueue_t   waitqueue[1];
     cr_eid_t        eid;
     cr_event_t      *event;
     void            *data;
@@ -137,7 +137,7 @@ typedef struct cr_event_node_struct cr_event_node_t;
 struct cr_event_control_struct {
     struct rb_root  nodes[1];
     int             count;
-    cr_waitable_t   waitable[1];
+    cr_waitqueue_t   waitqueue[1];
     struct {
         int     active: 1;
     } flag;

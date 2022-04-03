@@ -205,7 +205,7 @@ int cr_task_cancel(cr_task_t *task)
 
     cr_global()->cancel_count += 1;
 
-    return cr_waitable_push_tail(cr_global()->cancel_queue, task);
+    return cr_waitqueue_push_tail(cr_global()->cancel_queue, task);
 }
 
 /* 退出当前协程 */
@@ -249,7 +249,7 @@ int cr_suspend(cr_task_t *task)
         return 0;   /* 对于已经出于挂起状态的协程，什么也不做 */
     }
 
-    if (cr_waitable_remove(cr_global()->ready_queue, task) != 0) {
+    if (cr_waitqueue_remove(cr_global()->ready_queue, task) != 0) {
         return -1;
     }
 
@@ -272,7 +272,7 @@ int cr_wakeup(cr_task_t *task)
         return 0;   /* 对于处于就绪状态的协程，什么也不做 */
     }
 
-    if (cr_waitable_push_tail(cr_global()->ready_queue, task) != 0) {
+    if (cr_waitqueue_push_tail(cr_global()->ready_queue, task) != 0) {
         return -1;
     }
     

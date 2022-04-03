@@ -1,7 +1,7 @@
 #include <rbtree.h>
 #include <coroutine.h>
 #include <cr_pool.h>
-#include <cr_waitable.h>
+#include <cr_waitqueue.h>
 #include <cr_event.h>
 
 
@@ -74,20 +74,20 @@ static inline void __do_rb_delete(cr_event_t *event, cr_event_node_t *node)
 /* 让当前协程等待一个事件，这个事件必须没有协程正在等待 */
 static inline int __do_await(cr_event_t *event, cr_event_node_t *node)
 {
-    if (cr_is_waitable_busy(node->waitable)) {
+    if (cr_is_waitqueue_busy(node->waitqueue)) {
         return -1;
     } else {
-        return cr_await(node->waitable);
+        return cr_await(node->waitqueue);
     }
 }
 
 /* 唤醒一个事件节点上的协程，并向被唤醒协程传递给定数据 */
 static inline int __do_notify(cr_event_t *event, cr_event_node_t *node)
 {
-    if (!cr_is_waitable_busy(node->waitable)) {
+    if (!cr_is_waitqueue_busy(node->waitqueue)) {
         return 0;
     } else {
-        return cr_waitable_notify(node->waitable);
+        return cr_waitqueue_notify(node->waitqueue);
     }
 }
 
@@ -115,7 +115,7 @@ static inline int __init_event_node(cr_event_node_t *node, cr_event_t *event,
     node->event = event;
     node->data = data;
     RB_CLEAR_NODE(node->rb_node);
-    return cr_waitable_init(node->waitable);
+    return cr_waitqueue_init(node->waitqueue);
 }
 
 
@@ -126,7 +126,7 @@ int cr_event_init(cr_event_t *event)
         return -1;
     }
 
-    if (cr_waitable_init(event->waitable) != 0) {
+    if (cr_waitqueue_init(event->waitqueue) != 0) {
         return -1;
     }
     event->count = 0;
@@ -225,7 +225,7 @@ int cr_event_wait(cr_event_node_t *enode, void *data)
     if (!event) {
         return -1;
     }
-    if (cr_is_waitable_busy(enode->waitable)) {
+    if (cr_is_waitqueue_busy(enode->waitqueue)) {
         return -1;
     }
     
