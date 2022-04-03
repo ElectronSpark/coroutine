@@ -138,14 +138,14 @@ cr_task_t *cr_waitqueue_pop_tail(cr_waitqueue_t *waitqueue)
 }
 
 /* 唤醒等待队列队头的一个协程 */
-int cr_waitqueue_notify(cr_waitqueue_t *waitqueue)
+int cr_waitqueue_notify(cr_waitqueue_t *waitqueue, void *ret_data)
 {
     cr_task_t *task = cr_waitqueue_pop(waitqueue);
-    return cr_wakeup(task);
+    return cr_wakeup(task, ret_data);
 }
 
 /* 唤醒位于等待队列的所有协程 */
-int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue)
+int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue, void *ret_data)
 {
     cr_task_t *task = NULL;
     if (!waitqueue) {
@@ -153,7 +153,7 @@ int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue)
     }
 
     while ((task = cr_waitqueue_pop(waitqueue)) != NULL) {
-        cr_wakeup(task);
+        cr_wakeup(task, ret_data);
     }
     return cr_is_waitqueue_empty(waitqueue) ? 0 : -1;
 }
@@ -174,13 +174,13 @@ static int __cr_await_prepare(cr_waitqueue_t *waitqueue, cr_task_t *task)
 }
 
 /* 让当前协程加入等待队列并挂起 */
-int cr_await(cr_waitqueue_t *waitqueue)
+int cr_await(cr_waitqueue_t *waitqueue, void **ret_data)
 {
     cr_task_t *task = cr_self();
 
     if (__cr_await_prepare(waitqueue, task) == 0) {
         cr_waitqueue_push_tail(waitqueue, task);
-        return cr_sched();
+        return cr_sched(ret_data);
     }
     
     return -1;

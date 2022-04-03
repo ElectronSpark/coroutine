@@ -53,12 +53,14 @@ int cr_sem_close(cr_sem_t *sem)
     }
 
     sem->flag.opened = 0;
-    return cr_waitqueue_notify_all(sem->waitqueue);
+    return cr_waitqueue_notify_all(sem->waitqueue, cr_err2ptr(CR_ERR_CLOSE));
 }
 
 /* 尝试获得一个信号量 */
 int cr_sem_wait(cr_sem_t *sem)
 {
+    void *ret_data = NULL;
+
     if (!__check_sem_valid_open(sem)) {
         return -1;
     }
@@ -68,7 +70,7 @@ int cr_sem_wait(cr_sem_t *sem)
         return 0;
     } 
 
-    if (cr_await(sem->waitqueue) != 0) {
+    if (cr_await(sem->waitqueue, &ret_data) != 0) {
         return -1;
     }
 
@@ -83,7 +85,7 @@ int cr_sem_post(cr_sem_t *sem)
     }
 
     if (!cr_is_waitqueue_empty(sem->waitqueue)) {
-        return cr_waitqueue_notify(sem->waitqueue);
+        return cr_waitqueue_notify(sem->waitqueue, cr_err2ptr(CR_ERR_OK));
     }
 
     if (sem->value < sem->limit) {

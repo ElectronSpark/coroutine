@@ -41,7 +41,7 @@ static void __sender_entry(void *param) {
         }
     }
 
-    cr_channel_flush(ch);
+    cr_channel_flush(ch, NULL);
 
     if (cr_channel_close(ch) == 0) {
         close_count++;

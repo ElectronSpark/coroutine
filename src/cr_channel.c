@@ -107,15 +107,12 @@ int cr_channel_init(cr_channel_t *ch, unsigned int buffer_size)
 /* 关闭一个管道 */
 int cr_channel_close(cr_channel_t *ch)
 {
-    int ret = -1;
     if (!ch) {
         return -1;
     }
 
     __ch_flag_unset_opened(ch);
-    ret = cr_waitqueue_notify_all(ch->waitqueue);
-    cr_sched();
-    return ret;
+    return cr_waitqueue_notify_all(ch->waitqueue, cr_err2ptr(CR_ERR_CLOSE));
 }
 
 /* 创建一个给定大小缓存的管道 */
@@ -153,6 +150,7 @@ int cr_channel_destroy(cr_channel_t *ch)
 int cr_channel_recv(cr_channel_t *ch, void **data)
 {
     void *tmp_data = NULL;
+    void *ret_data = NULL;
 
     if (!data || !__ch_is_opened_valid(ch)) {
         return -1;
@@ -163,8 +161,10 @@ int cr_channel_recv(cr_channel_t *ch, void **data)
     }
 
     if (__ch_buffer_empty(ch)) {
-        cr_await(ch->waitqueue);
-        if (!__ch_is_opened_valid(ch)) {
+        if (cr_await(ch->waitqueue, &ret_data) != 0) {
+            return -1;
+        }
+        if (cr_ptr2err(ret_data) != CR_ERR_OK) {
             return -1;
         }
     }
@@ -173,8 +173,8 @@ int cr_channel_recv(cr_channel_t *ch, void **data)
     }
     *data = tmp_data;
 
-    if (!cr_is_waitqueue_empty(ch->waitqueue)) {
-        cr_waitqueue_notify(ch->waitqueue);
+    if (!__ch_buffer_empty(ch)) {
+        cr_waitqueue_notify(ch->waitqueue, cr_err2ptr(CR_ERR_OK));
     }
 
     return 0;
@@ -185,6 +185,7 @@ int cr_channel_send(cr_channel_t *ch, void *data)
 {
     int ret = -1;
     void *tmp_data = NULL;
+    void *ret_data = NULL;
 
     if (!__ch_is_opened_valid(ch)) {
         return -1;
@@ -196,8 +197,10 @@ int cr_channel_send(cr_channel_t *ch, void *data)
 
     /* 尝试清空缓冲 */
     while (__ch_buffer_full(ch)) {
-        cr_channel_flush(ch);
-        if (!__ch_is_opened_valid(ch)) {
+        if (cr_channel_flush(ch, &ret_data) != 0) {
+            return -1;
+        }
+        if (cr_ptr2err(ret_data) != CR_ERR_OK) {
             return -1;
         }
     }
@@ -206,7 +209,7 @@ int cr_channel_send(cr_channel_t *ch, void *data)
 }
 
 /* 通过唤醒等待接收 data 的协程，尝试将一个管道清空 */
-int cr_channel_flush(cr_channel_t *ch)
+int cr_channel_flush(cr_channel_t *ch, void **ret_data)
 {
     unsigned int tmp = 0;
 
@@ -221,11 +224,11 @@ int cr_channel_flush(cr_channel_t *ch)
     tmp = cr_chan_count(ch);
     if (tmp > 0) {
         for (unsigned int i = 0; i < tmp; i++) {
-            if (cr_waitqueue_notify(ch->waitqueue) != 0) {
+            if (cr_waitqueue_notify(ch->waitqueue, cr_err2ptr(CR_ERR_OK)) != 0) {
                 break;
             }
         }
-        return cr_await(ch->waitqueue);
+        return cr_await(ch->waitqueue, ret_data);
     }
 
     return 0;

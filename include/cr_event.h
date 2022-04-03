@@ -25,9 +25,9 @@ int cr_event_destroy(cr_event_t *event);
 
 cr_event_node_t *cr_event_add(cr_event_t *event, cr_eid_t eid);
 cr_event_node_t *cr_event_find(cr_event_t *event, cr_eid_t eid);
-int cr_event_remove(cr_event_node_t *enode);
+int cr_event_remove(cr_event_node_t *enode, void *err);
 
-int cr_event_wait(cr_event_node_t *enode, void *data);
+int cr_event_wait(cr_event_node_t *enode, void *data, void **err);
 int cr_event_get_data(cr_event_node_t *enode, void **data);
 int cr_event_notify(cr_event_node_t *enode, void *data);
 int cr_event_notify_all(cr_event_t *event, void *data);

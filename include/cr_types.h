@@ -21,7 +21,8 @@ typedef struct cr_waitqueue_struct   cr_waitqueue_t;
 /* 协程控制块 */
 struct cr_task_struct {
     struct list_head    list_head[1];
-    cr_waitqueue_t       *cur_queue;
+    cr_waitqueue_t      *cur_queue;
+    void                *ret_data;
     struct {
         int     alive: 1;
         int     ready: 1;

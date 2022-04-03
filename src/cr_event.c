@@ -72,39 +72,40 @@ static inline void __do_rb_delete(cr_event_t *event, cr_event_node_t *node)
 }
 
 /* 让当前协程等待一个事件，这个事件必须没有协程正在等待 */
-static inline int __do_await(cr_event_t *event, cr_event_node_t *node)
+static inline int __do_await(cr_event_t *event,
+                             cr_event_node_t *node,
+                             void **err)
 {
     if (!cr_is_waitqueue_empty(node->waitqueue)) {
         return -1;
-    } else {
-        return cr_await(node->waitqueue);
     }
+    return cr_await(node->waitqueue, err);
 }
 
 /* 唤醒一个事件节点上的协程，并向被唤醒协程传递给定数据 */
-static inline int __do_notify(cr_event_t *event, cr_event_node_t *node)
+static inline int __do_notify(cr_event_t *event,
+                              cr_event_node_t *node,
+                              void *err)
 {
     if (cr_is_waitqueue_empty(node->waitqueue)) {
         return 0;
-    } else {
-        return cr_waitqueue_notify(node->waitqueue);
     }
+    return cr_waitqueue_notify(node->waitqueue, err);
 }
 
 /* 唤醒等待一个事件的所有任务，并向所有被唤醒的协程传递相同的给定数据 */
-static inline int __do_notify_all(cr_event_t *event, void *data) {
+static inline int __do_notify_all(cr_event_t *event, void *err) {
     cr_event_node_t *pos = NULL;
     cr_event_node_t *n = NULL;
     struct rb_root *root = event->nodes;
     int ret = 0;
 
     rbtree_postorder_for_each_entry_safe(pos, n, root, rb_node[0]) {
-        pos->data = data;
-        if (__do_notify(event, pos) != 0) {
+        if (__do_notify(event, pos, err) != 0) {
             ret = -1;
         }
     }
-    return cr_sched() == 0 ? ret : -1;
+    return ret;
 }
 
 /* 在将事件节点插入事件控制块前初始化该节点 */
@@ -144,7 +145,7 @@ int cr_event_destroy(cr_event_t *event)
     }
 
     event->flag.active = 0;
-    while (__do_notify_all(event, NULL) != 0);
+    while (__do_notify_all(event, cr_err2ptr(CR_ERR_CLOSE)) == 0);
     return 0;
 }
 
@@ -199,26 +200,24 @@ cr_event_node_t *cr_event_find(cr_event_t *event, cr_eid_t eid)
 }
 
 /* 将事件节点移出事件控制块 */
-int cr_event_remove(cr_event_node_t *enode)
+int cr_event_remove(cr_event_node_t *enode, void *err)
 {
     cr_event_t *event = __get_node_event(enode);
-    int ret = -1;
     if (!event) {
         return -1;
     }
 
     __do_rb_delete(event, enode);
     enode->event = NULL;
-    if (__do_notify(event, enode) != 0) {
+    if (__do_notify(event, enode, err) != 0) {
         return -1;
     }
-    ret = cr_sched();
     __event_node_free(enode);
-    return ret;
+    return 0;
 }
 
 /* 令当前协程等待一个事件 */
-int cr_event_wait(cr_event_node_t *enode, void *data)
+int cr_event_wait(cr_event_node_t *enode, void *data, void **err)
 {
     cr_event_t *event = __get_node_event(enode);
     int ret = -1;
@@ -230,7 +229,7 @@ int cr_event_wait(cr_event_node_t *enode, void *data)
     }
     
     enode->data = data;
-    if ((ret = __do_await(event, enode)) != 0) {
+    if ((ret = __do_await(event, enode, err)) != 0) {
         return ret;
     }
     return __check_enode_valid(enode) ? ret : -1;
@@ -254,7 +253,7 @@ int cr_event_notify(cr_event_node_t *enode, void *data)
         return -1;
     }
     enode->data;
-    return __do_notify(event, enode);
+    return __do_notify(event, enode, cr_err2ptr(CR_ERR_OK));
 }
 
 /* 唤醒等待事件的所有协程，并将给定数据传递给它们 */

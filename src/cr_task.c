@@ -20,6 +20,7 @@ static void __tcb_init(cr_task_t *task, cr_function_t entry, void *arg,
     task->stack_size = stack_size;
     task->arg = arg;
     task->entry = entry;
+    task->ret_data = cr_err2ptr(CR_ERR_OK);
 
     cr_task_unset_main(task);
     cr_task_unset_alive(task);
@@ -150,7 +151,7 @@ int cr_task_init(cr_task_t *task, cr_function_t entry, void *arg)
         return -1;
     }
 
-    return cr_wakeup(task);
+    return cr_wakeup(task, NULL);
 }
 
 /* 创建一个新的协程，并返回协程控制块 */
@@ -212,13 +213,13 @@ int cr_task_cancel(cr_task_t *task)
 void cr_task_exit(void)
 {
     cr_task_cancel(cr_self());
-    cr_sched();
+    cr_sched(cr_err2ptr(CR_ERR_OK));
 }
 
 /* 恢复某个协程的上下文 */
 int cr_resume(cr_task_t *task)
 {
-    if (cr_wakeup(task) != 0) {
+    if (!cr_task_is_ready(task)) {
         return -1;
     }
 
@@ -226,12 +227,18 @@ int cr_resume(cr_task_t *task)
 }
 
 /* 主动让出 CPU，切换回主协程 */
-int cr_sched(void)
+int cr_sched(void **ret_data)
 {
+    int ret = -1;
+
     if (!cr_task_is_main(cr_self())) {
-        return __cr_task_switch_to(cr_main());
+        ret = __cr_task_switch_to(cr_main());
+        if (ret == 0 && ret_data) {
+            *ret_data = cr_self()->ret_data;
+        }
     }
-    return -1;
+
+    return ret;
 }
 
 /* 将一个协程挂起，移出就绪队列（不会发生协程上下文切换！）。 */
@@ -258,7 +265,7 @@ int cr_suspend(cr_task_t *task)
 }
 
 /* 唤醒一个协程，并将其加入就绪队列 */
-int cr_wakeup(cr_task_t *task)
+int cr_wakeup(cr_task_t *task, void *ret_data)
 {
     if (!task || !task->stack_base) {
         return -1;
@@ -276,6 +283,7 @@ int cr_wakeup(cr_task_t *task)
         return -1;
     }
     
+    task->ret_data = ret_data;
     cr_task_set_ready(task);
     return 0;
 }

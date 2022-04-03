@@ -22,6 +22,6 @@ int cr_channel_destroy(cr_channel_t *ch);
 /* 管道的收发操作 */
 int cr_channel_send(cr_channel_t *ch, void *data);
 int cr_channel_recv(cr_channel_t *ch, void **data);
-int cr_channel_flush(cr_channel_t *ch);
+int cr_channel_flush(cr_channel_t *ch, void **ret_data);
 
 #endif /* __CR_CHANNEL_H__ */

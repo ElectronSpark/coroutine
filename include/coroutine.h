@@ -3,6 +3,7 @@
 #define __ES_COROUTINE_H__
 
 #include <cr_types.h>
+#include <cr_errno.h>
 #include <cr_task.h>
 #include <cr_waitqueue.h>
 #include <cr_channel.h>

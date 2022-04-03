@@ -31,15 +31,15 @@ static void __trd_entry(void *param)
         stub();
         return;
     }
-    if (cr_event_wait(enode, param) != 0) {
-        cr_event_remove(enode);
+    if (cr_event_wait(enode, param, NULL) != 0) {
+        cr_event_remove(enode, cr_ptr2err(CR_ERR_OK));
         stub();
         return;
     }
     if (cr_event_get_data(enode, &ret_data) == 0 && ret_data == param) {
         count3 += 1;
     }
-    cr_event_remove(enode);
+    cr_event_remove(enode, cr_ptr2err(CR_ERR_OK));
 }
 
 static void __sec_entry(void *param)
@@ -52,18 +52,18 @@ static void __sec_entry(void *param)
         stub();
         return;
     }
-    if (cr_event_wait(enode, param) != 0) {
-        cr_event_remove(enode);
+    if (cr_event_wait(enode, param, NULL) != 0) {
+        cr_event_remove(enode, cr_ptr2err(CR_ERR_OK));
         stub();
         return;
     }
     if (cr_event_get_data(enode, &ret_data) != 0 || ret_data != param) {
-        cr_event_remove(enode);
+        cr_event_remove(enode, cr_ptr2err(CR_ERR_OK));
         stub();
         return;
     }
-    cr_event_remove(enode);
-    cr_sched();
+    cr_event_remove(enode, cr_ptr2err(CR_ERR_OK));
+    cr_sched(NULL);
     
     eid += 1;
     if ((enode = cr_event_find(&__sevent, eid)) == NULL) {
@@ -93,17 +93,17 @@ static void __top_entry(void *param)
         stub();
         return;
     }
-    if (cr_event_wait(enode, param) != 0) {
-        cr_event_remove(enode);
+    if (cr_event_wait(enode, param, cr_ptr2err(CR_ERR_OK)) != 0) {
+        cr_event_remove(enode, cr_ptr2err(CR_ERR_OK));
         stub();
         return;
     }
     if (cr_event_get_data(enode, &ret_data) != 0 && ret_data != param) {
-        cr_event_remove(enode);
+        cr_event_remove(enode, cr_ptr2err(CR_ERR_OK));
         stub();
         return;
     }
-    cr_event_remove(enode);
+    cr_event_remove(enode, cr_ptr2err(CR_ERR_OK));
 
 
     for (long i = 0; i < CR_EVENT_GROUP_SIZE; i++) {
