@@ -16,7 +16,7 @@
 
 
 /* 判断是否有协程位于等待队列 */
-#define cr_is_waitqueue_busy(wtb)  (!list_empty((wtb)->wait_queue))
+#define cr_is_waitqueue_empty(wtb)      list_empty((wtb)->wait_queue)
 #define cr_is_task_in_waitqueue(task, waitqueue)  \
     ((task)->cur_queue == (waitqueue))
 

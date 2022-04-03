@@ -80,7 +80,7 @@ cr_task_t *cr_waitqueue_get(cr_waitqueue_t *waitqueue)
 {
     cr_task_t *ret = NULL;
 
-    if (!waitqueue || !cr_is_waitqueue_busy(waitqueue)) {
+    if (!waitqueue || cr_is_waitqueue_empty(waitqueue)) {
         return NULL;
     }
 
@@ -94,7 +94,7 @@ cr_task_t *cr_waitqueue_get_tail(cr_waitqueue_t *waitqueue)
 {
     cr_task_t *ret = NULL;
 
-    if (!waitqueue || !cr_is_waitqueue_busy(waitqueue)) {
+    if (!waitqueue || cr_is_waitqueue_empty(waitqueue)) {
         return NULL;
     }
 
@@ -164,7 +164,7 @@ int cr_waitqueue_notify_all(cr_waitqueue_t *waitqueue)
     while ((task = cr_waitqueue_pop(waitqueue)) != NULL) {
         cr_wakeup(task);
     }
-    return cr_is_waitqueue_busy(waitqueue) ? -1 : 0;
+    return cr_is_waitqueue_empty(waitqueue) ? 0 : -1;
 }
 
 

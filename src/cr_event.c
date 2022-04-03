@@ -74,7 +74,7 @@ static inline void __do_rb_delete(cr_event_t *event, cr_event_node_t *node)
 /* 让当前协程等待一个事件，这个事件必须没有协程正在等待 */
 static inline int __do_await(cr_event_t *event, cr_event_node_t *node)
 {
-    if (cr_is_waitqueue_busy(node->waitqueue)) {
+    if (!cr_is_waitqueue_empty(node->waitqueue)) {
         return -1;
     } else {
         return cr_await(node->waitqueue);
@@ -84,7 +84,7 @@ static inline int __do_await(cr_event_t *event, cr_event_node_t *node)
 /* 唤醒一个事件节点上的协程，并向被唤醒协程传递给定数据 */
 static inline int __do_notify(cr_event_t *event, cr_event_node_t *node)
 {
-    if (!cr_is_waitqueue_busy(node->waitqueue)) {
+    if (cr_is_waitqueue_empty(node->waitqueue)) {
         return 0;
     } else {
         return cr_waitqueue_notify(node->waitqueue);
@@ -225,7 +225,7 @@ int cr_event_wait(cr_event_node_t *enode, void *data)
     if (!event) {
         return -1;
     }
-    if (cr_is_waitqueue_busy(enode->waitqueue)) {
+    if (!cr_is_waitqueue_empty(enode->waitqueue)) {
         return -1;
     }
     

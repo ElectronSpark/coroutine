@@ -17,7 +17,7 @@ cr_gct_t cr_global_control_table;
 static void __cr_default_idle_handler(void *param)
 {
     /* 默认的 idle 动作为等待收到来自操作系统的信号 */
-    if (!cr_is_waitqueue_busy(cr_global()->ready_queue)) {
+    if (cr_is_waitqueue_empty(cr_global()->ready_queue)) {
         pause();
     }
 }

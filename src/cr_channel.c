@@ -173,7 +173,7 @@ int cr_channel_recv(cr_channel_t *ch, void **data)
     }
     *data = tmp_data;
 
-    if (cr_is_waitqueue_busy(ch->waitqueue)) {
+    if (!cr_is_waitqueue_empty(ch->waitqueue)) {
         cr_waitqueue_notify(ch->waitqueue);
     }
 

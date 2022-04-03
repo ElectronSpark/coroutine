@@ -82,7 +82,7 @@ int cr_sem_post(cr_sem_t *sem)
         return -1;
     }
 
-    if (cr_is_waitqueue_busy(sem->waitqueue)) {
+    if (!cr_is_waitqueue_empty(sem->waitqueue)) {
         return cr_waitqueue_notify(sem->waitqueue);
     }
 
