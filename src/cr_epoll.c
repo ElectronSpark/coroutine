@@ -56,7 +56,7 @@ int cr_epoll_close(void)
     return CR_ERR_OK;
 }
 
-/*  */
+/* 添加对一个文件的监听 */
 int cr_epoll_add(int fd, int events)
 {
     struct epoll_event epevent = {
@@ -71,7 +71,7 @@ int cr_epoll_add(int fd, int events)
     return epoll_ctl(__epfd, EPOLL_CTL_ADD, fd, &epevent);
 }
 
-/*  */
+/* 删除对一个文件的监听 */
 int cr_epoll_del(int fd)
 {
     if (!__check_epfd_valid()) {
@@ -81,7 +81,7 @@ int cr_epoll_del(int fd)
     return epoll_ctl(__epfd, EPOLL_CTL_DEL, fd, NULL);
 }
 
-/*  */
+/* 修改对文件进行监听的事件 */
 int cr_epoll_mod(int fd, int events)
 {
     struct epoll_event epevent = {
@@ -96,7 +96,7 @@ int cr_epoll_mod(int fd, int events)
     return epoll_ctl(__epfd, EPOLL_CTL_MOD, fd, &epevent);
 }
 
-/*  */
+/* 等待 epoll 返回事件，并根据这些事件唤醒相应的协程 */
 int cr_epoll_wait(int timeout)
 {
     static struct epoll_event events[512] = { 0 };
