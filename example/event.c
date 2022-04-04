@@ -7,8 +7,10 @@
 #include <cr_event.h>
 
 static inline void __stub(void) {}
-#define stub()  printf("%s()-%d\n", __func__, __LINE__); __stub()
-// #define stub()
+#define stub()  do {    \
+    printf("%s()-%d\n", __func__, __LINE__);    \
+    __stub();   \
+} while (0)
 
 #define CR_EVENT_GROUP_SIZE     16
 #define CR_TOP_TASK_NUM         10

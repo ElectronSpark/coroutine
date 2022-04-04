@@ -16,6 +16,8 @@
         "signum-arch.h": "c",
         "cr_event.h": "c",
         "rbtree_types.h": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "stdio.h": "c",
+        "unistd.h": "c"
     }
 }

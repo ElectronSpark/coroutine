@@ -31,7 +31,9 @@ C_FILES =	\
 	$(CURDIR)/src/cr_task.c	\
 	$(CURDIR)/src/cr_waitqueue.c	\
 	$(CURDIR)/src/cr_semaphore.c	\
-	$(CURDIR)/src/cr_event.c
+	$(CURDIR)/src/cr_event.c	\
+	$(CURDIR)/src/cr_fd.c	\
+	$(CURDIR)/src/cr_epoll.c
 C_FILES	+=	\
 	$(CURDIR)/external/src/rbtree.c
 ASM_FILES =	\

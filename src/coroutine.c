@@ -40,6 +40,13 @@ int cr_init(void)
     cr_set_current_task(cr_main());
     cr_global()->flag.valid = 1;
 
+    if (cr_fd_init() != 0) {
+        return -1;
+    }
+    if (cr_epoll_init() != 0) {
+        return -1;
+    }
+
     return 0;
 }
 
