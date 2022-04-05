@@ -36,14 +36,10 @@ static inline int __fditem_init(cr_fd_t *fditem, int fd)
     if ((ret = cr_waitqueue_init(fditem->wait_queue)) != CR_ERR_OK) {
         return ret;
     }
-    if ((ret = cr_waitqueue_init(fditem->read_queue)) != CR_ERR_OK) {
-        return ret;
-    }
-    if ((ret = cr_waitqueue_init(fditem->write_queue)) != CR_ERR_OK) {
+    if ((ret = cr_waitqueue_init(fditem->wait_close)) != CR_ERR_OK) {
         return ret;
     }
     fditem->fd = fd;
-    fditem->events = 0;
 
     return CR_ERR_OK;
 }
@@ -139,8 +135,7 @@ int cr_fd_unregister(int fd)
     }
 
     cr_waitqueue_notify_all(__fdstab[fd]->wait_queue, -CR_ERR_CLOSE);
-    cr_waitqueue_notify_all(__fdstab[fd]->read_queue, -CR_ERR_CLOSE);
-    cr_waitqueue_notify_all(__fdstab[fd]->write_queue, -CR_ERR_CLOSE);
+    cr_waitqueue_notify_all(__fdstab[fd]->wait_close, -CR_ERR_CLOSE);
     __fditem_free(__fdstab[fd]);
     __fdstab[fd] = NULL;
     return CR_ERR_OK;
@@ -162,6 +157,39 @@ int cr_fd_freeze(cr_fd_t *fditem)
     }
     fditem->fd = -1;
     return CR_ERR_OK;
+}
+
+/**/
+int cr_fd_wait(cr_fd_t *fditem, int *ret)
+{
+    cr_task_t *task = NULL;
+    int __ret = CR_ERR_OK;
+    if (!fditem || fditem->fd < 0) {
+        return -CR_ERR_INVAL;
+    }
+
+    if ((__ret = cr_await(fditem->wait_queue)) != CR_ERR_OK) {
+        return __ret;
+    }
+    if (!ret) {
+        *ret = cr_self()->epoll_events;
+    }
+    return CR_ERR_OK;
+}
+
+/**/
+int cr_fd_notify(cr_fd_t *fditem, int ret)
+{
+    cr_task_t *task = NULL;
+    if (!fditem || !cr_is_fd_busy(fditem)) {
+        return -CR_ERR_INVAL;
+    }
+
+    if ((task = cr_waitqueue_pop(fditem->wait_queue)) == NULL) {
+        return -CR_ERR_FAIL;
+    }
+    task->epoll_events = ret;
+    return cr_wakeup(task, CR_ERR_OK);
 }
 
 /* 获得文件描述符的 cr_fd_t 结构体 */

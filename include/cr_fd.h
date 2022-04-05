@@ -9,6 +9,11 @@ int cr_fd_register(int fd);
 int cr_fd_unregister(int fd);
 int cr_fd_set_unblock(int fd);
 int cr_fd_freeze(cr_fd_t *fditem);
+int cr_fd_wait(cr_fd_t *fditem, int *ret);
+int cr_fd_notify(cr_fd_t *fditem, int ret);
 cr_fd_t *cr_fd_get(int fd, int checkopen);
+
+#define cr_is_fd_busy(__fditem) \
+    (!cr_is_waitqueue_empty((__fditem)->wait_queue))
 
 #endif /* __CR_FD_H__ */

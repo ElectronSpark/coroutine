@@ -21,6 +21,7 @@ static void __tcb_init(cr_task_t *task, cr_function_t entry, void *arg,
     task->arg = arg;
     task->entry = entry;
     task->cr_errno = -CR_ERR_OK;
+    task->epoll_events = 0;
 
     cr_task_unset_main(task);
     cr_task_unset_alive(task);

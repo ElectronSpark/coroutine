@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <netinet/in.h>
 
 #include <coroutine.h>
@@ -14,11 +15,17 @@ static void __entry(void *param) {
     int ret = -1;
     int sock = -1;
     int clnt_sock = -1;
+    int reuse = 1;
 
     sock = cr_socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         printf("failed to create sock. fd: %d\n", sock);
         return;
+    }
+    ret = setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, 
+                     (char *)&reuse, sizeof(reuse));
+    if (ret != 0) {
+        printf("failed to set SO_REUSEPORT");
     }
     printf("socket created. fd: %d\n", sock);
 
@@ -27,7 +34,7 @@ static void __entry(void *param) {
         goto __entry_exit;
     }
     if (bind(sock, &srv_addr, socklen) != CR_ERR_OK) {
-        printf("failed to bind\n");
+        printf("failed to bind, errno:%d\n", errno);
         goto __entry_exit;
     }
     if (listen(sock, 5) != CR_ERR_OK) {
@@ -54,9 +61,13 @@ static void __entry(void *param) {
     printf("send: \"%s\"\n", buffer);
 
 __entry_exit_clnt:
-    cr_closesocket(clnt_sock);
+    if ((ret = cr_closesocket(clnt_sock)) != 0) {
+        printf("failed to close clnt_sock: %d, ret: %d\n", clnt_sock, ret);
+    }
 __entry_exit:
-    cr_closesocket(sock);
+    if ((ret = cr_closesocket(sock)) != 0) {
+        printf("failed to close sock: %d, ret: %d\n", sock, ret);
+    }
 }
 
 int main(void)

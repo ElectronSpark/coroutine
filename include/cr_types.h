@@ -23,6 +23,7 @@ struct cr_task_struct {
     struct list_head    list_head[1];
     cr_waitqueue_t      *cur_queue;
     int                 cr_errno;
+    int                 epoll_events;
     struct {
         int     alive: 1;
         int     ready: 1;
@@ -149,10 +150,8 @@ typedef struct cr_event_control_struct  cr_event_t;
 /* 暂时储存一个 fd 的相关信息 */
 struct cr_fditem_struct {
     int             fd;
-    int             events;
+    cr_waitqueue_t  wait_close[1];
     cr_waitqueue_t  wait_queue[1];
-    cr_waitqueue_t  read_queue[1];
-    cr_waitqueue_t  write_queue[1];
 };
 typedef struct cr_fditem_struct cr_fd_t;
 

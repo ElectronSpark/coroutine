@@ -20,7 +20,7 @@ static void __entry(void *param) {
     }
     printf("socket created. fd: %d\n", sock);
 
-    if (cr_make_sockaddr(&srv_addr, &socklen, "0.0.0.0", 2334) != CR_ERR_OK) {
+    if (cr_make_sockaddr(&srv_addr, &socklen, "127.0.0.1", 2334) != CR_ERR_OK) {
         printf("failed to make sockaddr\n");
         goto __entry_exit;
     }
@@ -42,7 +42,9 @@ static void __entry(void *param) {
     printf("received: \"%s\"\n", buffer);
 
 __entry_exit:
-    cr_closesocket(sock);
+    if ((ret = cr_closesocket(sock)) != 0) {
+        printf("failed to close sock: %d, ret: %d\n", sock, ret);
+    }
 }
 
 int main(void)

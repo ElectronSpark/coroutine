@@ -43,9 +43,6 @@ int cr_init(void)
     if (cr_fd_init() != 0) {
         return -1;
     }
-    if (cr_epoll_init() != 0) {
-        return -1;
-    }
 
     return 0;
 }
@@ -72,6 +69,10 @@ int cr_wait_event_loop(void)
     cr_task_t *task = NULL;
 
     if (!cr_is_eventloop_valid()) {
+        return -1;
+    }
+
+    if (cr_epoll_init() != 0) {
         return -1;
     }
 
@@ -103,6 +104,8 @@ int cr_wait_event_loop(void)
 
     /* 退出前清除所有的 tcb */
     __clean_cancel_queue();
+
+    cr_epoll_close();
 
     return 0;
 }
