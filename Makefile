@@ -33,7 +33,8 @@ C_FILES =	\
 	$(CURDIR)/src/cr_semaphore.c	\
 	$(CURDIR)/src/cr_event.c	\
 	$(CURDIR)/src/cr_fd.c	\
-	$(CURDIR)/src/cr_epoll.c
+	$(CURDIR)/src/cr_epoll.c	\
+	$(CURDIR)/src/cr_socket.c
 C_FILES	+=	\
 	$(CURDIR)/external/src/rbtree.c
 ASM_FILES =	\

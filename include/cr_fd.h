@@ -8,6 +8,7 @@ int cr_fd_init(void);
 int cr_fd_register(int fd);
 int cr_fd_unregister(int fd);
 int cr_fd_set_unblock(int fd);
-cr_fd_t *cr_fd_get(int fd);
+int cr_fd_freeze(cr_fd_t *fditem);
+cr_fd_t *cr_fd_get(int fd, int checkopen);
 
 #endif /* __CR_FD_H__ */

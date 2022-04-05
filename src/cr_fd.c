@@ -33,13 +33,13 @@ static inline int __fditem_init(cr_fd_t *fditem, int fd)
 {
     int ret = CR_ERR_OK;
 
-    if ((ret = cr_sem_init(fditem->wait_sem, 1, 1)) != CR_ERR_OK) {
+    if ((ret = cr_waitqueue_init(fditem->wait_queue)) != CR_ERR_OK) {
         return ret;
     }
-    if ((ret = cr_sem_init(fditem->read_sem, 1, 1)) != CR_ERR_OK) {
+    if ((ret = cr_waitqueue_init(fditem->read_queue)) != CR_ERR_OK) {
         return ret;
     }
-    if ((ret = cr_sem_init(fditem->write_sem, 1, 1)) != CR_ERR_OK) {
+    if ((ret = cr_waitqueue_init(fditem->write_queue)) != CR_ERR_OK) {
         return ret;
     }
     fditem->fd = fd;
@@ -138,9 +138,9 @@ int cr_fd_unregister(int fd)
         return -CR_ERR_INVAL;
     }
 
-    cr_sem_close(__fdstab[fd]->wait_sem);
-    cr_sem_close(__fdstab[fd]->read_sem);
-    cr_sem_close(__fdstab[fd]->write_sem);
+    cr_waitqueue_notify_all(__fdstab[fd]->wait_queue, -CR_ERR_CLOSE);
+    cr_waitqueue_notify_all(__fdstab[fd]->read_queue, -CR_ERR_CLOSE);
+    cr_waitqueue_notify_all(__fdstab[fd]->write_queue, -CR_ERR_CLOSE);
     __fditem_free(__fdstab[fd]);
     __fdstab[fd] = NULL;
     return CR_ERR_OK;
@@ -154,13 +154,23 @@ int cr_fd_set_unblock(int fd)
     return fcntl(fd, F_SETFL, flag);
 }
 
+/* 将文件描述符冻结，以准备关闭 cr_fd_t */
+int cr_fd_freeze(cr_fd_t *fditem)
+{
+    if (!fditem || fditem->fd < 0) {
+        return -CR_ERR_INVAL;
+    }
+    fditem->fd = -1;
+    return CR_ERR_OK;
+}
+
 /* 获得文件描述符的 cr_fd_t 结构体 */
-cr_fd_t *cr_fd_get(int fd)
+cr_fd_t *cr_fd_get(int fd, int checkopen)
 {
     if (!__check_fd(fd)) {
         return NULL;
     }
-    if (__fdstab[fd]->fd != fd) {
+    if (checkopen && __fdstab[fd]->fd != fd) {
         return NULL;
     }
     return __fdstab[fd];

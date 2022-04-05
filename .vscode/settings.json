@@ -18,6 +18,7 @@
         "rbtree_types.h": "c",
         "typeinfo": "c",
         "stdio.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "cr_types.h": "c"
     }
 }

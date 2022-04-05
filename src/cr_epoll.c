@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 #include <sys/epoll.h>
 
 #include <coroutine.h>
@@ -8,7 +9,7 @@
 #include <cr_epoll.h>
 
 
-static __epfd = -1;
+static int __epfd = -1;
 
 #define __check_epfd_valid()    (__epfd >= 0)
 
@@ -116,22 +117,22 @@ int cr_epoll_wait(int timeout)
     }
 
     for (int i = 0; i < nfds; i++) {
-        fditem = cr_fd_get(events->data.fd);
+        fditem = cr_fd_get(events[i].data.fd, 0);
         if (fditem == NULL) {
             continue;
         }
-        fditem->events = events;
-        cr_sem_post(fditem->wait_sem);
-        if (events->events & (EPOLLERR | EPOLLHUP)) {
-            cr_sem_close(fditem->read_sem);
-            cr_sem_close(fditem->write_sem);
-            cr_sem_close(fditem->wait_sem);
+        fditem->events = events[i].events;
+        if (events[i].events & (EPOLLERR | EPOLLHUP)) {
+            cr_waitqueue_notify_all(fditem->read_queue, -CR_ERR_CLOSE);
+            cr_waitqueue_notify_all(fditem->write_queue, -CR_ERR_CLOSE);
+            cr_waitqueue_notify_all(fditem->wait_queue, -CR_ERR_CLOSE);
         } else {
-            if (events->events & EPOLLIN) {
-                cr_sem_post(fditem->read_sem);
+            cr_waitqueue_notify(fditem->wait_queue, CR_ERR_OK);
+            if (events[i].events & EPOLLIN) {
+                cr_waitqueue_notify(fditem->read_queue, CR_ERR_OK);
             }
-            if (events->events & EPOLLOUT) {
-                cr_sem_post(fditem->write_sem);
+            if (events[i].events & EPOLLOUT) {
+                cr_waitqueue_notify(fditem->write_queue, CR_ERR_OK);
             }
         }
     }
