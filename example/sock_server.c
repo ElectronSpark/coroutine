@@ -33,7 +33,7 @@ static void __entry(void *param) {
         printf("failed to make sockaddr\n");
         goto __entry_exit;
     }
-    if (bind(sock, &srv_addr, socklen) != CR_ERR_OK) {
+    if (bind(sock, (struct sockaddr *)&srv_addr, socklen) != CR_ERR_OK) {
         printf("failed to bind, errno:%d\n", errno);
         goto __entry_exit;
     }
@@ -42,7 +42,7 @@ static void __entry(void *param) {
         goto __entry_exit;
     }
 
-    if ((clnt_sock = cr_accept(sock, &clnt_addr, &clntlen)) <= 0) {
+    if ((clnt_sock = cr_accept(sock, (struct sockaddr *)&clnt_addr, &clntlen)) <= 0) {
         printf("failed to accept\n");
         goto __entry_exit;
     }

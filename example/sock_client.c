@@ -24,7 +24,7 @@ static void __entry(void *param) {
         printf("failed to make sockaddr\n");
         goto __entry_exit;
     }
-    if (cr_connect(sock, &srv_addr, socklen) != CR_ERR_OK) {
+    if (cr_connect(sock, (struct sockaddr *)&srv_addr, socklen) != CR_ERR_OK) {
         printf("failed to connect\n");
         goto __entry_exit;
     }
