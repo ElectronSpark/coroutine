@@ -116,7 +116,7 @@ int cr_fd_register(int fd)
     if (!__is_fd_valid(fd)) {
         return -CR_ERR_INVAL;
     }
-    if (!__fdstab || !__fdstab[fd]) {
+    if (!__fdstab || __fdstab[fd]) {
         return -CR_ERR_FAIL;
     }
 

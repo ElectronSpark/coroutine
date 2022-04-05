@@ -19,6 +19,10 @@
         "typeinfo": "c",
         "stdio.h": "c",
         "unistd.h": "c",
-        "cr_types.h": "c"
+        "cr_types.h": "c",
+        "cr_socket.h": "c",
+        "errno.h": "c",
+        "features.h": "c",
+        "errno-base.h": "c"
     }
 }

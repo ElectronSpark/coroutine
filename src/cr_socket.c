@@ -46,7 +46,7 @@ int cr_socket(int domain, int type, int protocol)
     
     ret_fd = socket(domain, type, protocol);
     if (ret_fd < 0) {
-        return -CR_ERR_FAIL;
+        return ret_fd;
     }
     if ((ret = cr_fd_set_unblock(ret_fd)) != CR_ERR_OK) {
         close(ret_fd);
@@ -139,15 +139,16 @@ ssize_t cr_recv(int socket, void *buffer, size_t length, int flags )
     }
     for (;;) {
         ret = recv(socket, buffer, length, flags);
-        if (ret == -1 && errno == EAGAIN) {
-            if (cr_epoll_add(socket, EPOLLIN|EPOLLOUT|EPOLLHUP) != 0) {
+        if (ret < 0) {
+            if (errno != EAGAIN) {
+                return -CR_ERR_FAIL;
+            }
+            if (cr_epoll_add(socket, EPOLLIN) != 0) {
                 return -CR_ERR_FAIL;
             }
             if ((ret = cr_await(fditem->read_queue)) == CR_ERR_OK) {
                 continue;
             }
-        } else if (ret < 0) {
-            return -CR_ERR_FAIL;
         }
         return ret;
     }
@@ -163,15 +164,16 @@ ssize_t cr_send(int socket, const void *buffer, size_t length, int flags)
     }
     for (;;) {
         ret = send(socket, buffer, length, flags);
-        if (ret == -1 && errno == EAGAIN) {
-            if (cr_epoll_add(socket, EPOLLIN|EPOLLOUT|EPOLLHUP) != 0) {
+        if (ret < 0) {
+            if (errno != EAGAIN) {
+                return -CR_ERR_FAIL;
+            }
+            if (cr_epoll_add(socket, EPOLLOUT) != 0) {
                 return -CR_ERR_FAIL;
             }
             if ((ret = cr_await(fditem->write_queue)) == CR_ERR_OK) {
                 continue;
             }
-        } else if (ret < 0) {
-            return -CR_ERR_FAIL;
         }
         return ret;
     }
@@ -189,17 +191,18 @@ ssize_t cr_recvfrom(int socket, void *buffer, size_t length,
     }
     for (;;) {
         ret = recvfrom(socket, buffer, length, flags, address, address_len);
-        if (ret < 0 && errno == EAGAIN) {
-            ret = cr_epoll_add(socket, EPOLLIN|EPOLLOUT|EPOLLHUP);
+        if (ret < 0) {
+            if (errno != EAGAIN) {
+                return -CR_ERR_FAIL;
+            }
+            ret = cr_epoll_add(socket, EPOLLIN);
             if (ret != 0) {
                 return -CR_ERR_FAIL;
             }
-            if ((ret = cr_await(fditem->write_queue)) != CR_ERR_OK) {
+            if ((ret = cr_await(fditem->read_queue)) != CR_ERR_OK) {
                 return ret;
             }
             continue;
-        } else {
-            return -CR_ERR_FAIL;
         }
         return ret;
     }
@@ -217,8 +220,11 @@ ssize_t cr_sendto(int socket, const void *message, size_t length,
     }
     for (;;) {
         ret = sendto(socket, message, length, flags, dest_addr, dest_len);
-        if (ret < 0 && errno == EAGAIN) {
-            ret = cr_epoll_add(socket, EPOLLIN|EPOLLOUT|EPOLLHUP);
+        if (ret < 0) {
+            if (errno != EAGAIN) {
+                return -CR_ERR_FAIL;
+            }
+            ret = cr_epoll_add(socket, EPOLLOUT);
             if (ret != 0) {
                 return -CR_ERR_FAIL;
             }
@@ -226,8 +232,6 @@ ssize_t cr_sendto(int socket, const void *message, size_t length,
                 return ret;
             }
             continue;
-        } else {
-            return -CR_ERR_FAIL;
         }
         return ret;
     }
@@ -250,7 +254,7 @@ int cr_connect(int sockfd, const struct sockaddr *address,
     for (;;) {
         ret = connect(sockfd, address, address_len);
         if (ret < 0) {
-            if (errno == EAGAIN) {
+            if (errno == EINPROGRESS) {
                 ret = cr_epoll_add(sockfd, EPOLLIN|EPOLLOUT|EPOLLHUP);
                 if (ret != 0) {
                     return -CR_ERR_FAIL;

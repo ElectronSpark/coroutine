@@ -61,7 +61,7 @@ int cr_epoll_close(void)
 int cr_epoll_add(int fd, int events)
 {
     struct epoll_event epevent = {
-        .events = events,
+        .events = events | EPOLLONESHOT | EPOLLET,
         .data.fd = fd
     };
 
@@ -86,7 +86,7 @@ int cr_epoll_del(int fd)
 int cr_epoll_mod(int fd, int events)
 {
     struct epoll_event epevent = {
-        .events = events,
+        .events = events | EPOLLONESHOT | EPOLLET,
         .data.fd = fd
     };
 
