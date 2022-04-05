@@ -6,27 +6,14 @@
 #include <cr_socket.h>
 
 static void __entry(void *param) {
-    struct sockaddr_in srv_addr = { 0 };
-    socklen_t socklen = sizeof(struct sockaddr_in);
     char buffer[64] = { 0 };
     const char *send_str = "hello ";
     int ret = -1;
     int sock = -1;
 
-    sock = cr_socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
-        printf("failed to create sock. fd: %d\n", sock);
+    if ((sock = cr_connect_tcp_server("127.0.0.1", 2334)) < 0) {
+        printf("failed to connect to server\n");
         return;
-    }
-    printf("socket created. fd: %d\n", sock);
-
-    if (cr_make_sockaddr(&srv_addr, &socklen, "127.0.0.1", 2334) != CR_ERR_OK) {
-        printf("failed to make sockaddr\n");
-        goto __entry_exit;
-    }
-    if (cr_connect(sock, (struct sockaddr *)&srv_addr, socklen) != CR_ERR_OK) {
-        printf("failed to connect\n");
-        goto __entry_exit;
     }
 
     if (cr_send(sock, send_str, strlen(send_str), 0) <= 0) {

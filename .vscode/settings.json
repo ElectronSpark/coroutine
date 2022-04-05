@@ -23,6 +23,7 @@
         "cr_socket.h": "c",
         "errno.h": "c",
         "features.h": "c",
-        "errno-base.h": "c"
+        "errno-base.h": "c",
+        "in.h": "c"
     }
 }

@@ -38,7 +38,53 @@ int cr_make_sockaddr(struct sockaddr_in *addr, socklen_t *addrlen,
 
 int cr_create_tcp_server(const char *host, const unsigned short port)
 {
+    struct sockaddr_in srv_addr = { 0 };
+    socklen_t socklen = sizeof(struct sockaddr_in);
+    int ret = -1;
+    int sock = -1;
 
+    sock = cr_socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        return sock;
+    }
+
+    ret = cr_make_sockaddr(&srv_addr, &socklen, host, port);
+    if (ret != CR_ERR_OK) {
+        cr_closesocket(sock);
+        return ret;
+    }
+    ret = bind(sock, (struct sockaddr *)&srv_addr, socklen);
+    if (ret != CR_ERR_OK) {
+        cr_closesocket(sock);
+        return ret;
+    }
+
+    return sock;
+}
+
+int cr_connect_tcp_server(const char *host, const unsigned short port)
+{
+    struct sockaddr_in srv_addr = { 0 };
+    socklen_t socklen = sizeof(struct sockaddr_in);
+    int ret = -1;
+    int sock = -1;
+
+    sock = cr_socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        return sock;
+    }
+    ret = cr_make_sockaddr(&srv_addr, &socklen, host, port);
+    if (ret != CR_ERR_OK) {
+        cr_closesocket(sock);
+        return ret;
+    }
+    ret = cr_connect(sock, (struct sockaddr *)&srv_addr, socklen);
+    if (ret != CR_ERR_OK) {
+        cr_closesocket(sock);
+        return ret;
+    }
+
+    return sock;
 }
 
 int cr_socket(int domain, int type, int protocol)

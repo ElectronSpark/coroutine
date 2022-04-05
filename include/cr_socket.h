@@ -9,6 +9,7 @@
 int cr_make_sockaddr(struct sockaddr_in *addr, socklen_t *addrlen,
                      const char *host, const unsigned short port);
 int cr_create_tcp_server(const char *host, const unsigned short port);
+int cr_connect_tcp_server(const char *host, const unsigned short port);
 
 int cr_socket(int domain, int type, int protocol);
 int cr_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);

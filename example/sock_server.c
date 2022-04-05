@@ -7,9 +7,7 @@
 #include <cr_socket.h>
 
 static void __entry(void *param) {
-    struct sockaddr_in srv_addr = { 0 };
     struct sockaddr_in clnt_addr = { 0 };
-    socklen_t socklen = sizeof(struct sockaddr_in);
     socklen_t clntlen = sizeof(struct sockaddr_in);
     char buffer[64] = { 0 };
     int ret = -1;
@@ -17,26 +15,13 @@ static void __entry(void *param) {
     int clnt_sock = -1;
     int reuse = 1;
 
-    sock = cr_socket(AF_INET, SOCK_STREAM, 0);
+    sock = cr_create_tcp_server("", 2334);
     if (sock < 0) {
-        printf("failed to create sock. fd: %d\n", sock);
+        printf("failed to create server, errno:%d\n", errno);
         return;
     }
-    ret = setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, 
-                     (char *)&reuse, sizeof(reuse));
-    if (ret != 0) {
-        printf("failed to set SO_REUSEPORT");
-    }
-    printf("socket created. fd: %d\n", sock);
+    setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, (char *)&reuse, sizeof(reuse));
 
-    if (cr_make_sockaddr(&srv_addr, &socklen, "", 2334) != CR_ERR_OK) {
-        printf("failed to make sockaddr\n");
-        goto __entry_exit;
-    }
-    if (bind(sock, (struct sockaddr *)&srv_addr, socklen) != CR_ERR_OK) {
-        printf("failed to bind, errno:%d\n", errno);
-        goto __entry_exit;
-    }
     if (listen(sock, 5) != CR_ERR_OK) {
         printf("failed to listen\n");
         goto __entry_exit;
