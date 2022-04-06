@@ -120,7 +120,13 @@ int cr_epoll_waitevent(int fd, int events, int *retevents)
         return -CR_ERR_FAIL;
     }
 
-    return cr_fd_wait(fditem, retevents);
+    ret = cr_fd_wait(fditem, retevents);
+    if (ret != -CR_ERR_CLOSE) {
+        if (!cr_is_fd_busy(fditem)) {
+            __epoll_ctl_del(fd);
+        }
+    }
+    return ret;
 }
 
 /* 等待 epoll 返回事件，并根据这些事件唤醒相应的协程 */
@@ -148,9 +154,6 @@ int cr_epoll_notify(int timeout)
             continue;
         }
         cr_fd_notify(fditem, events[i].events);
-        if (!cr_is_fd_busy(fditem)) {
-            __epoll_ctl_del(events[i].data.fd);
-        }
     }
 
     return CR_ERR_OK;

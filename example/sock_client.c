@@ -7,7 +7,6 @@
 
 static void __entry(void *param) {
     char buffer[64] = { 0 };
-    const char *send_str = "hello ";
     int ret = -1;
     int sock = -1;
 
@@ -16,7 +15,8 @@ static void __entry(void *param) {
         return;
     }
 
-    if (cr_send(sock, send_str, strlen(send_str), 0) <= 0) {
+    sprintf(buffer, "this is %d ", (int)param);
+    if (cr_send(sock, buffer, strlen(buffer), 0) <= 0) {
         printf("failed to send string\n");
         goto __entry_exit;
     }
@@ -38,7 +38,9 @@ int main(void)
 {
     cr_init();
 
-    cr_task_create(__entry, NULL);
+    for (int i = 0; i < 128; i++) {
+        cr_task_create(__entry, (void *)i);
+    }
 
     cr_wait_event_loop();
 
