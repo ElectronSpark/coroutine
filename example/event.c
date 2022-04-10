@@ -66,7 +66,7 @@ static void __sec_entry(void *param)
         return;
     }
     cr_event_remove(enode);
-    cr_sched();
+    cr_yield();
     
     eid += 1;
     if ((enode = cr_event_find(&__sevent, eid)) == NULL) {

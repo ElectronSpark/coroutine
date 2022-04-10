@@ -175,10 +175,6 @@ static int __cr_await_prepare(cr_waitqueue_t *waitqueue, cr_task_t *task)
         return -CR_ERR_INVAL;
     }
 
-    if (!cr_task_is_ready(task)) {
-        return -CR_ERR_INVAL;
-    }
-
     return cr_suspend(task);
 }
 
@@ -190,7 +186,7 @@ int cr_await(cr_waitqueue_t *waitqueue)
 
     if ((ret = __cr_await_prepare(waitqueue, task)) == 0) {
         cr_waitqueue_push_tail(waitqueue, task);
-        return cr_sched();
+        return cr_yield();
     }
     
     return ret;

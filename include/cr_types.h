@@ -24,11 +24,6 @@ struct cr_task_struct {
     cr_waitqueue_t      *cur_queue;
     int                 cr_errno;
     int                 epoll_events;
-    struct {
-        int     alive: 1;
-        int     ready: 1;
-        int     main: 1;
-    }   flag;
     
     void    *stack_base;
     size_t  stack_size;

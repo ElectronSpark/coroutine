@@ -22,10 +22,6 @@ static void __tcb_init(cr_task_t *task, cr_function_t entry, void *arg,
     task->entry = entry;
     task->cr_errno = -CR_ERR_OK;
     task->epoll_events = 0;
-
-    cr_task_unset_main(task);
-    cr_task_unset_alive(task);
-    cr_task_unset_ready(task);
 }
 
 /* 分配协程控制块和协程栈 */
@@ -95,7 +91,6 @@ static int __cr_task_register(cr_task_t *task)
         return -CR_ERR_INVAL;
     }
 
-    cr_task_set_alive(task);
     cr_global()->task_count += 1;
 
     return CR_ERR_OK;
@@ -112,7 +107,6 @@ static int __cr_task_unregister(cr_task_t *task)
         return -CR_ERR_INVAL;
     }
 
-    cr_task_unset_alive(task);
     cr_global()->task_count -= 1;
 
     return CR_ERR_OK;
@@ -127,9 +121,6 @@ int cr_init_main(cr_task_t *task)
     }
 
     __tcb_init(task, NULL, NULL, NULL, 0);
-    cr_task_set_main(task);
-    cr_task_set_alive(task);
-    cr_task_set_ready(task);
 
     return CR_ERR_OK;
 }
@@ -184,7 +175,7 @@ int cr_task_destroy(cr_task_t *task)
         return -CR_ERR_INVAL;
     }
 
-    if (cr_task_is_alive(task) || cr_task_is_main(task)) {
+    if (cr_task_is_main(task)) {
         return -CR_ERR_INVAL;
     }
 
@@ -215,7 +206,7 @@ int cr_task_cancel(cr_task_t *task)
 void cr_task_exit(void)
 {
     cr_task_cancel(cr_self());
-    cr_sched();
+    cr_yield();
 }
 
 /* 恢复某个协程的上下文 */
@@ -229,7 +220,7 @@ int cr_resume(cr_task_t *task)
 }
 
 /* 主动让出 CPU，切换回主协程 */
-int cr_sched(void)
+int cr_yield(void)
 {
     int ret = CR_ERR_OK;
     if (!cr_task_is_main(cr_self())) {
@@ -250,7 +241,7 @@ int cr_suspend(cr_task_t *task)
         return -CR_ERR_INVAL;
     }
 
-    if (!cr_task_is_alive(task) || cr_task_is_main(task)) {
+    if (cr_task_is_main(task)) {
         return -CR_ERR_INVAL;
     }
 
@@ -262,7 +253,6 @@ int cr_suspend(cr_task_t *task)
         return ret;
     }
 
-    cr_task_unset_ready(task);
     return CR_ERR_OK;
 }
 
@@ -275,7 +265,7 @@ int cr_wakeup(cr_task_t *task, int err)
         return -CR_ERR_INVAL;
     }
 
-    if (!cr_task_is_alive(task) || cr_task_is_main(task)) {
+    if (cr_task_is_main(task)) {
         return -CR_ERR_INVAL;
     }
 
@@ -288,6 +278,5 @@ int cr_wakeup(cr_task_t *task, int err)
     }
     
     task->cr_errno = err;
-    cr_task_set_ready(task);
     return CR_ERR_OK;
 }
