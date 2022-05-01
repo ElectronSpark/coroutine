@@ -4,14 +4,9 @@
 
 // %rax func(%rdi, %rsi, %rdx, %rcx, %r8, %r9)
 
-// cr_context_t *__cr_switch_to(void *prev, void *next, cr_context_t *last);
+// void *__cr_switch_to(void *prev, void *next, void *retval);
 .globl __cr_switch_to
 __cr_switch_to:
-    callq   __cr_switch_to_impl
-    retq
-
-__cr_switch_to_impl:
-    movq    %rax,    0x00(%rdi)
     movq    %rbx,    0x08(%rdi)
     movq    %rcx,    0x10(%rdi)
     movq    %rdx,    0x18(%rdi)
@@ -50,21 +45,8 @@ __cr_switch_to_impl:
     ret
 
 
-// void __cr_context_init(void *arg1, void *arg2,
-//                        void *arg3, void *stack_end,
-//                        void *func_entry);
-// __cr_context_init:
-//     movq    %rcx,   %rsp
-//     addq    $8,     %rsp
-//     pushq   %r8
-//     retq
-
-
-// %rax __cr_save_gp_regs(%rax)
-// -> 0: currently in main task
-// -> 1: currently in other tasks
+// void __cr_save_gp_regs(%rax)
 __cr_save_gp_regs:
-    movq    $0x01,  0x00(%rax)
     movq    %rbx,   0x08(%rax)
     movq    %rcx,   0x10(%rax)
     movq    %rdx,   0x18(%rax)

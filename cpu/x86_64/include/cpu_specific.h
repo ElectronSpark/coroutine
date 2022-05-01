@@ -7,16 +7,15 @@
 
 
 /* 下面几个函数用汇编实现 */
-extern cr_context_t *__cr_switch_to(void *prev, void *next,
-                                    cr_context_t *last);
+extern void *__cr_switch_to(void *prev, void *next, void *retval);
 extern void __cr_context_init(void *arg1, void *arg2,
                               void *arg3, void *stack_end,
                               void *func_entry, void *regs);
 
 /* 上下文切换的 cpu 特定实现 */
 static inline void *cr_switch_to(cr_context_t *prev,
-                                         cr_context_t *next,
-                                         void *retval)
+                                 cr_context_t *next,
+                                 void *retval)
 {
     if (!prev || !next) {
         return NULL;
