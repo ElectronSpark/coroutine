@@ -1,7 +1,7 @@
 #include <coroutine.h>
 #include <stdio.h>
 
-#define CR_TOP_ENTRY_TASK_NUM   1000000
+#define CR_TOP_ENTRY_TASK_NUM   500000
 
 int count1 = 0;
 int count2 = 0;

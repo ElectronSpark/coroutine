@@ -18,6 +18,7 @@ ASFLAGS = $(CFLAGS)
 
 EXP_DIR = $(CURDIR)/example
 EXP_SRC =	\
+	$(EXP_DIR)/test.c	\
 	$(EXP_DIR)/eventloop.c	\
 	$(EXP_DIR)/channel.c	\
 	$(EXP_DIR)/producer_customer.c	\
