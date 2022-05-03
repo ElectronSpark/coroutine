@@ -172,7 +172,7 @@ int cr_channel_recv(cr_channel_t *ch, void **data)
     }
     *data = tmp_data;
 
-    if (__ch_buffer_empty(ch) > 0) {
+    if (cr_chan_count(ch) > 0) {
         cr_waitqueue_notify(ch->waitqueue, CR_ERR_OK);
     }
 
